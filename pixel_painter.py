@@ -374,8 +374,19 @@ class PixelPlan:
     def load(cls, path: str, cfg: Optional[Config] = None) -> Optional["PixelPlan"]:
         if not path or not os.path.exists(path):
             return None
-        with open(path, "r", encoding="utf-8") as f:
-            data = json.load(f)
+        # Windows: file có thể đang bị os.replace bởi worker khác → retry nhẹ.
+        data = None
+        for attempt in range(5):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                break
+            except PermissionError:
+                time.sleep(0.04 * (attempt + 1))
+            except (json.JSONDecodeError, OSError):
+                return None
+        if data is None:
+            return None  # lock kéo dài → coi như chưa có progress
         # Invalidate progress nếu chữ ký ảnh+grid không khớp hiện tại.
         # - saved_sig khác cur_sig: user đã đổi ảnh hoặc đổi grid → bỏ qua.
         # - saved_sig rỗng (file legacy, tạo trước khi có cơ chế sig): cũng bỏ qua,
@@ -418,7 +429,26 @@ class PixelPlan:
         tmp = self.progress_path + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(data, f)
-        os.replace(tmp, self.progress_path)
+        # Windows: os.replace có thể bị Access denied nếu file đích đang bị
+        # đọc bởi tiến trình khác (vd: get_progress poll) hoặc AV scan.
+        # Retry vài lần với backoff nhỏ.
+        last_err = None
+        for attempt in range(6):
+            try:
+                os.replace(tmp, self.progress_path)
+                last_err = None
+                break
+            except PermissionError as e:
+                last_err = e
+                time.sleep(0.05 * (attempt + 1))
+        if last_err is not None:
+            try:
+                os.remove(tmp)
+            except OSError:
+                pass
+            # Báo lỗi nhưng không crash worker — tiếp tục vẽ, lưu lần sau.
+            print(f"[PixelPlan.save] ⚠ Không thay thế được progress file "
+                  f"(sau 6 lần thử): {last_err}", flush=True)
 
     def has_more(self) -> bool:
         return self.index < len(self.cells)
