@@ -25,7 +25,7 @@ def main():
 
     # Mặc định mở giao diện đồ họa
     if "--setup" in sys.argv:
-        # Chế độ dòng lệnh: đăng nhập Facebook lần đầu
+        # Chế độ dòng lệnh: thiết lập session (lưu cookie) lần đầu
         import config as cfgmod
         import browser as br
         cfg = cfgmod.load()

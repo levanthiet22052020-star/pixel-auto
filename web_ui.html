@@ -384,8 +384,16 @@ async function saveConfig() {
   log(r.message || 'Đã lưu.');
 }
 async function pickImage() {
-  const p = await api().pick_image();
-  if (p) set('pixel_image_path', p);
+  try {
+    const p = await api().pick_image();
+    if (p) {
+      set('pixel_image_path', p);
+      log('🖼 Đã chọn: ' + p);
+      updateSizeInfo();
+    }
+  } catch (e) {
+    log('❌ Lỗi chọn ảnh: ' + e);
+  }
 }
 async function preview() {
   log('Đang tạo preview...');

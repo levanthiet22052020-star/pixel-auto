@@ -2,8 +2,6 @@
 
 Tự động vẽ tranh pixel art lên canvas pixel công cộng (`datn.unifolio.io.vn/pixel`). Tool tự đăng nhập, tự dò kích thước canvas, vẽ theo **nét (batch) + jitter ngẫu nhiên** để mô phỏng hành vi người thật — tránh bị server flag/khóa tài khoản.
 
-> Phần mềm hỗ trợ thêm tự động **comment + Like Facebook** và **gửi ảnh PDF qua Messenger** (module phụ trong `fb_tool/`).
-
 ---
 
 ## ✨ Tính năng chính
@@ -156,13 +154,6 @@ auto-checkin-fb/
 ├── multi_account.py         # điều phối N worker song song
 ├── multi_painter.py         # multi-account cũ (CLI)
 │
-├── core.py                  # engine Facebook (comment/like/messenger)
-├── fb_tasks.py              # comment + Like Facebook
-├── msg_tasks.py             # gửi ảnh PDF Messenger
-├── pdf_pages.py             # render trang PDF
-├── screenshot.py            # chụp + cắt ảnh
-│
-├── fb_tool/                 # tool FB standalone
 ├── pixel_tool/              # tool pixel standalone
 ├── requirements.txt
 └── README.md

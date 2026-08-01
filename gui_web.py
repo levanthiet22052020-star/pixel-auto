@@ -125,18 +125,29 @@ class Api:
         return {"ok": True, "message": "✅ Đã lưu config.yaml"}
 
     def pick_image(self) -> str:
-        """Mở file dialog, trả đường dẫn ảnh."""
-        # pywebview hỗ trợ window.create_file_dialog.
-        win = webview.windows[0]
-        result = win.create_file_dialog(
-            webview.OPEN_DIALOG,
-            file_types=("Ảnh (*.png *.jpg *.jpeg *.bmp *.gif *.webp)", "All files (*.*)"),
-        )
-        if result and isinstance(result, list) and result:
-            return result[0]
-        if isinstance(result, str):
-            return result
-        return ""
+        """Mở file dialog, trả đường dẫn ảnh.
+
+        Dùng tkinter.filedialog (chạy độc lập với UI thread pywebview)
+        thay vì win.create_file_dialog — cái sau hay deadlock khi JS await.
+        """
+        try:
+            import tkinter as tk
+            from tkinter import filedialog
+            root = tk.Tk()
+            root.withdraw()  # ẩn cửa sổ chính.
+            root.attributes("-topmost", True)
+            path = filedialog.askopenfilename(
+                title="Chọn ảnh nguồn",
+                filetypes=[
+                    ("Ảnh", "*.png *.jpg *.jpeg *.bmp *.gif *.webp"),
+                    ("Tất cả", "*.*"),
+                ],
+            )
+            root.destroy()
+            return path or ""
+        except Exception as e:
+            self._log(f"[pick_image][Lỗi] {e}")
+            return ""
 
     def preview(self, form_json: str) -> str:
         """Tạo preview PNG (ảnh pixel + vị trí canvas) → base64."""
@@ -371,14 +382,23 @@ class Api:
     def project_save(self, form_json: str) -> str:
         """Lưu dự án (.pixproj = setup + ảnh pixel + tiến độ)."""
         c = self._apply_form(form_json)
-        win = webview.windows[0]
-        result = win.create_file_dialog(
-            webview.SAVE_DIALOG, save_filename="project.pixproj",
-            file_types=("Pixel project (*.pixproj)", "All files (*.*)"),
-        )
-        if not result:
+        try:
+            import tkinter as tk
+            from tkinter import filedialog
+            root = tk.Tk()
+            root.withdraw()
+            root.attributes("-topmost", True)
+            path = filedialog.asksaveasfilename(
+                title="Lưu dự án pixel",
+                defaultextension=".pixproj",
+                filetypes=[("Pixel project", "*.pixproj"), ("Tất cả", "*.*")],
+                initialfile="project.pixproj",
+            )
+            root.destroy()
+        except Exception as e:
+            return f"❌ Lỗi dialog: {e}"
+        if not path:
             return "Đã hủy."
-        path = result if isinstance(result, str) else (result[0] if result else "")
         try:
             import pixel_painter as pp
             import yaml
@@ -402,14 +422,21 @@ class Api:
 
     def project_load(self) -> dict:
         """Mở dự án .pixproj."""
-        win = webview.windows[0]
-        result = win.create_file_dialog(
-            webview.OPEN_DIALOG,
-            file_types=("Pixel project (*.pixproj)", "All files (*.*)"),
-        )
-        if not result:
+        try:
+            import tkinter as tk
+            from tkinter import filedialog
+            root = tk.Tk()
+            root.withdraw()
+            root.attributes("-topmost", True)
+            path = filedialog.askopenfilename(
+                title="Mở dự án pixel",
+                filetypes=[("Pixel project", "*.pixproj"), ("Tất cả", "*.*")],
+            )
+            root.destroy()
+        except Exception as e:
+            return {"message": f"❌ Lỗi dialog: {e}"}
+        if not path:
             return {"message": "Đã hủy."}
-        path = result[0] if isinstance(result, list) else result
         try:
             with open(path, "r", encoding="utf-8") as f:
                 project = json.load(f)
