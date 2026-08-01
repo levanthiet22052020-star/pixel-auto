@@ -27,6 +27,10 @@ build/
 dist/
 *.spec.bak
 
+# run.bat / run.vbs được tạo bởi install.bat (chứa đường dẫn tuyệt đối máy user)
+run.bat
+run.vbs
+
 # ===================== ASSETS LỚN / TẠM =====================
 # Ảnh chụp màn hình demo (lấy lại được, không cần version control)
 screenshots/

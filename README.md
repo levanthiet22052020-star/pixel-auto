@@ -21,6 +21,25 @@ Tự động vẽ tranh pixel art lên canvas pixel công cộng (`datn.unifolio
 
 ## 📦 Cài đặt
 
+### Cách nhanh (Windows) — chỉ 2 bước!
+
+1. **Bấm đúp `install.bat`** — script tự động:
+   - Kiểm tra Python 3.10+
+   - Cài thư viện (`pip install -r requirements.txt`)
+   - Cài Chromium cho Playwright
+   - Tạo `config.yaml` từ template (nếu chưa có)
+   - Tạo shortcut **"Auto Pixel Painter"** trên Desktop
+   - Tạo `run.bat` (có log) + `run.vbs` (ẩn console)
+
+2. **Mở `config.yaml`** điền tài khoản + mật khẩu DATN:
+   ```
+   notepad config.yaml
+   ```
+
+Xong! Bấm đúp shortcut Desktop hoặc chạy `run.bat` để mở tool.
+
+### Cách thủ công (Linux/Mac/Windows)
+
 ```bash
 # 1. Cài dependencies
 pip install -r requirements.txt
@@ -44,6 +63,10 @@ nano config.yaml                           # Linux/Mac
 ```bash
 python main.py
 ```
+
+Hoặc trên Windows:
+- Bấm đúp **shortcut "Auto Pixel Painter"** trên Desktop (ẩn console)
+- Hoặc bấm đúp `run.bat` (có log console để debug)
 
 → Mở cửa sổ GUI → nhập ảnh, tài khoản → bấm **▶ Vẽ tất cả** hoặc **👥 Vẽ đa tài khoản**.
 
@@ -154,6 +177,7 @@ auto-checkin-fb/
 ├── worker_cli.py            # worker đa tài khoản (chạy trong subprocess)
 ├── multi_account.py         # điều phối N worker song song
 │
+├── install.bat              # ⭐ script cài đặt (Windows): deps + Chromium + shortcut
 ├── requirements.txt
 └── README.md
 ```
