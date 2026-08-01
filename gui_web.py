@@ -88,6 +88,15 @@ class Api:
             c.pixel_num_accounts = len(accs)
         c.pixel_use_dom_mode = True
         c.pixel_use_screen_mode = False
+        # === GIÁ TRỊ CỨNG (không cho user đổi qua UI) ===
+        c.pixel_dither = True           # Dithering
+        c.pixel_full_color = True       # Toàn màu
+        c.pixel_bg_skip = False         # Bỏ ô nền trắng/đen
+        c.pixel_smart_skip = False      # Smart skip
+        c.pixel_color_tolerance = 0     # Dung sai màu
+        c.pixel_overlay_opacity = 0.4   # Độ mờ overlay
+        c.pixel_cooldown_seconds = 0.5  # Cooldown
+        c.pixel_batch_size = 0          # Vẽ từng mẻ = 0 (vẽ hết)
         self.cfg = c
         return c
 
@@ -262,28 +271,6 @@ class Api:
         self._log(f"[DOM] ▶ Bắt đầu vẽ tất cả ({c.pixel_grid_w}×{c.pixel_grid_h}).")
         threading.Thread(target=self._paint_dom_thread, args=(c, False), daemon=True).start()
 
-    def paint_batch(self, form_json: str):
-        if self._painting:
-            self._log("⚠ Đang vẽ rồi.")
-            return
-        c = self._apply_form(form_json)
-        if c.pixel_batch_size <= 0:
-            c.pixel_batch_size = 50
-        if not c.pixel_image_path or not os.path.exists(c.pixel_image_path):
-            self._log("⚠ Chọn ảnh nguồn trước.")
-            return
-        if not c.pixel_site_url:
-            self._log("⚠ Nhập URL trang chính.")
-            return
-        try:
-            import screen_painter as sp
-            sp.clear_stop()
-        except Exception:
-            pass
-        self._painting = True
-        self._log(f"[DOM] ▶ Vẽ thử mẻ ({c.pixel_batch_size} ô).")
-        threading.Thread(target=self._paint_dom_thread, args=(c, True), daemon=True).start()
-
     def paint_multi(self, form_json: str):
         if self._painting:
             self._log("⚠ Đang vẽ rồi.")
@@ -339,29 +326,6 @@ class Api:
                 self._painting = False
 
         threading.Thread(target=run, daemon=True).start()
-
-    def test_one(self, form_json: str):
-        """Vẽ 1 ô thử ở giữa ảnh."""
-        if self._painting:
-            self._log("⚠ Đang vẽ rồi.")
-            return
-        c = self._apply_form(form_json)
-        if not c.pixel_image_path or not os.path.exists(c.pixel_image_path):
-            self._log("⚠ Chọn ảnh nguồn trước.")
-            return
-        if not c.pixel_site_url:
-            self._log("⚠ Nhập URL trang chính.")
-            return
-        try:
-            import screen_painter as sp
-            sp.clear_stop()
-        except Exception:
-            pass
-        self._painting = True
-        # Ép batch=1 để chỉ vẽ 1 ô.
-        c.pixel_batch_size = 1
-        self._log("[DOM] 🎯 Vẽ 1 ô thử.")
-        threading.Thread(target=self._paint_dom_thread, args=(c, True), daemon=True).start()
 
     def repaint_diff(self, form_json: str):
         """Dò lại canvas rồi tô các ô sai màu (HELP-style)."""

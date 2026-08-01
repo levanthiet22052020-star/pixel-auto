@@ -183,48 +183,6 @@
     <div id="size_info" class="hint" style="margin-top:8px; font-size:13px; color:#1e40af;"></div>
   </div>
 
-  <!-- Tùy chọn -->
-  <div class="card">
-    <h2 class="card-title">⚙ Tùy chọn vẽ</h2>
-    <div class="grid-2">
-      <div class="check-row">
-        <input type="checkbox" id="pixel_dither">
-        <label for="pixel_dither">Dithering (chấm điểm tạo dải màu)</label>
-      </div>
-      <div class="check-row">
-        <input type="checkbox" id="pixel_full_color">
-        <label for="pixel_full_color">🎨 Toàn màu (chi tiết nhất)</label>
-      </div>
-      <div class="check-row">
-        <input type="checkbox" id="pixel_bg_skip">
-        <label for="pixel_bg_skip">Bỏ ô nền trắng/đen</label>
-      </div>
-      <div class="check-row">
-        <input type="checkbox" id="pixel_smart_skip">
-        <label for="pixel_smart_skip">Smart skip (chỉ ô sai màu)</label>
-      </div>
-    </div>
-    <div class="grid-4" style="margin-top:8px;">
-      <div>
-        <label class="field">Dung sai màu</label>
-        <input type="number" id="pixel_color_tolerance" min="0" max="128" value="10">
-      </div>
-      <div>
-        <label class="field">Độ mờ overlay</label>
-        <input type="number" id="pixel_overlay_opacity" min="0" max="1" step="0.05" value="0.35">
-      </div>
-      <div>
-        <label class="field">Cooldown (s)</label>
-        <input type="number" id="pixel_cooldown" min="0" step="0.1" value="0.5">
-      </div>
-      <div>
-        <label class="field">Vẽ từng mẻ (ô)</label>
-        <input type="number" id="pixel_batch_size" min="0" value="0">
-      </div>
-    </div>
-    <p class="hint">Smart skip = false để ép vẽ lại tất cả (đè ảnh cũ). 0 ô = vẽ hết.</p>
-  </div>
-
   <!-- Tiến độ -->
   <div class="card">
     <h2 class="card-title">📊 Tiến độ</h2>
@@ -241,14 +199,12 @@
   <div class="card">
     <h2 class="card-title">▶ Hành động</h2>
     <div class="row-actions" style="margin-bottom:8px;">
-      <button class="btn btn-secondary btn-sm" onclick="paintBatch()">▶ Vẽ thử (mẻ)</button>
       <button class="btn btn-primary btn-sm" onclick="paintAll()">▶ Vẽ tất cả</button>
       <button class="btn btn-success btn-sm" onclick="paintMulti()">👥 Vẽ đa tài khoản</button>
+      <button class="btn btn-danger btn-sm" onclick="cancel()">⏹ Hủy (ESC)</button>
     </div>
     <div class="row-actions" style="margin-bottom:8px;">
-      <button class="btn btn-secondary btn-sm" onclick="testOne()">🎯 Test 1 ô</button>
       <button class="btn btn-secondary btn-sm" onclick="repaintDiff()">🔍 Dò lại & tô</button>
-      <button class="btn btn-danger btn-sm" onclick="cancel()">⏹ Hủy (ESC)</button>
       <button class="btn btn-secondary btn-sm" onclick="resetProgress()">🔄 Xóa tiến độ</button>
     </div>
     <div class="row-actions">
@@ -298,15 +254,9 @@ function getFormData() {
     pixel_grid_h: num('pixel_grid_h'),
     pixel_offset_x: num('pixel_offset_x'),
     pixel_offset_y: num('pixel_offset_y'),
-    pixel_dither: chk('pixel_dither'),
-    pixel_full_color: chk('pixel_full_color'),
-    pixel_bg_skip: chk('pixel_bg_skip'),
-    pixel_smart_skip: chk('pixel_smart_skip'),
-    pixel_color_tolerance: num('pixel_color_tolerance'),
-    pixel_overlay_opacity: parseFloat(val('pixel_overlay_opacity')) || 0.35,
-    pixel_cooldown: parseFloat(val('pixel_cooldown')) || 0.5,
+    // Các tùy chọn vẽ (dither, full_color, smart_skip, color_tolerance,
+    // overlay_opacity, cooldown, batch_size) đã được set cứng trong Python.
     pixel_jitter: 0.2,
-    pixel_batch_size: num('pixel_batch_size'),
     accounts: accs,
   };
 }
@@ -323,14 +273,6 @@ function fillForm(c) {
   set('pixel_grid_h', c.pixel_grid_h ?? 320);
   set('pixel_offset_x', c.pixel_offset_x ?? 0);
   set('pixel_offset_y', c.pixel_offset_y ?? 0);
-  document.getElementById('pixel_dither').checked = !!c.pixel_dither;
-  document.getElementById('pixel_full_color').checked = !!c.pixel_full_color;
-  document.getElementById('pixel_bg_skip').checked = !!c.pixel_bg_skip;
-  document.getElementById('pixel_smart_skip').checked = !!c.pixel_smart_skip;
-  set('pixel_color_tolerance', c.pixel_color_tolerance ?? 10);
-  set('pixel_overlay_opacity', c.pixel_overlay_opacity ?? 0.35);
-  set('pixel_cooldown', c.pixel_cooldown_seconds ?? 0.5);
-  set('pixel_batch_size', c.pixel_batch_size ?? 0);
   // Accounts
   renderAccRows(c.accounts || []);
   updateSizeInfo();
@@ -410,13 +352,11 @@ async function preview() {
 }
 function closePreview() { document.getElementById('preview_modal').classList.remove('show'); }
 
-async function paintBatch() { await api().paint_batch(JSON.stringify(getFormData())); }
 async function paintAll() { await api().paint_all(JSON.stringify(getFormData())); }
 async function paintMulti() {
   if (!confirm('Vẽ đa tài khoản — sẽ mở N Chrome song song. Tiếp tục?')) return;
   await api().paint_multi(JSON.stringify(getFormData()));
 }
-async function testOne() { await api().test_one(JSON.stringify(getFormData())); }
 async function repaintDiff() { await api().repaint_diff(JSON.stringify(getFormData())); }
 async function cancel() { await api().cancel(); log('⏹ Đã yêu cầu dừng.'); }
 async function resetProgress() {
