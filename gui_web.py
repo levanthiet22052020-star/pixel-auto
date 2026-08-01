@@ -10,10 +10,14 @@ Khác gui.py (Tkinter): KHÔNG tạo tk widget, chỉ giữ data + method action
 """
 from __future__ import annotations
 
+# Playwright: force dùng cache user mặc định (%USERPROFILE%\AppData\Local\ms-playwright)
+# thay vì .local-browsers cạnh script. Phải đặt TRƯỚC khi import playwright.
+import os
+os.environ.setdefault("PLAYWRIGHT_BROWSERS_PATH", "0")
+
 import base64
 import io
 import json
-import os
 import queue
 import threading
 import time

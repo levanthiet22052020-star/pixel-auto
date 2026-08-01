@@ -135,8 +135,7 @@ Tool không POST trực tiếp — nó **click DOM thật** (mouse down/up) đ�
 
 ```
 auto-checkin-fb/
-├── main.py                  # vào chương trình (mở Web UI)
-├── gui_web.py               # ⭐ giao diện Web UI (pywebview + Tailwind)
+├── gui_web.py               # ⭐ vào chương trình + giao diện Web UI (pywebview + Tailwind)
 ├── web_ui.html              # HTML/CSS cho Web UI
 ├── config.py                # đọc/ghi config.yaml
 ├── config.example.yaml      # template config (KHÔNG commit config.yaml)
