@@ -812,18 +812,42 @@ class App:
         c.pixel_batch_size = old_batch
 
     def _pixel_reset(self):
+        """Xóa toàn bộ file tiến độ: default + multi-account (acc1/2/3...) + loaded."""
+        import glob
         c = self._collect()
         try:
             from config import app_dir
         except Exception:
             app_dir = lambda: os.path.dirname(os.path.abspath(__file__))  # type: ignore
-        prog = c.pixel_progress_path or os.path.join(app_dir(), "pixel_progress.json")
+        base_dir = app_dir()
+        removed = []
+        # 1) File default (1 tài khoản).
+        prog = c.pixel_progress_path or os.path.join(base_dir, "pixel_progress.json")
         if os.path.exists(prog):
             try:
                 os.remove(prog)
-                self._log(f"[Pixel] Đã xóa file tiến độ: {prog}")
+                removed.append(os.path.basename(prog))
             except OSError as e:
-                self._log(f"[Pixel][Lỗi] không xóa được: {e}")
+                self._log(f"[Pixel][Lỗi] không xóa được {prog}: {e}")
+        # 2) File multi-account: pixel_progress_acc*.json.
+        for p in glob.glob(os.path.join(base_dir, "pixel_progress_acc*.json")):
+            try:
+                os.remove(p)
+                removed.append(os.path.basename(p))
+            except OSError:
+                pass
+        # 3) File nạp từ dự án.
+        loaded = os.path.join(base_dir, "pixel_progress_loaded.json")
+        if os.path.exists(loaded):
+            try:
+                os.remove(loaded)
+                removed.append(os.path.basename(loaded))
+            except OSError:
+                pass
+        if removed:
+            self._log(f"[Pixel] 🗑 Đã xóa {len(removed)} file: {', '.join(removed)}")
+        else:
+            self._log("[Pixel] ℹ Không có file tiến độ để xóa.")
         self._set_pixel_progress(0.0, "Đã xóa tiến độ.")
 
     def _set_pixel_progress(self, pct: float, label: str):

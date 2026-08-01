@@ -367,19 +367,37 @@ class Api:
         self._log("⏹ Đã yêu cầu dừng.")
 
     def reset_progress(self) -> str:
+        """Xóa toàn bộ file tiến độ: default + multi-account (acc1/2/3...) + loaded."""
         try:
+            import glob
             import pixel_painter as pp
             c = self.cfg
-            # Xóa file progress — bao gồm cả default path nếu cfg để trống.
+            base_dir = cfgmod.app_dir()
+            removed = []
+            # 1) File default (1 tài khoản).
             path = c.pixel_progress_path or pp._default_progress_path()
             if path and os.path.exists(path):
                 os.remove(path)
-                self._log(f"🗑 Đã xóa file progress: {path}")
+                removed.append(os.path.basename(path))
+            # 2) File multi-account: pixel_progress_acc*.json (mỗi acc 1 file).
+            for p in glob.glob(os.path.join(base_dir, "pixel_progress_acc*.json")):
+                try:
+                    os.remove(p)
+                    removed.append(os.path.basename(p))
+                except OSError:
+                    pass
+            # 3) File nạp từ dự án (.pixproj).
+            loaded = os.path.join(base_dir, "pixel_progress_loaded.json")
+            if os.path.exists(loaded):
+                os.remove(loaded)
+                removed.append(os.path.basename(loaded))
+            if removed:
+                self._log(f"🗑 Đã xóa {len(removed)} file progress: {', '.join(removed)}")
             else:
                 self._log("ℹ Không có file progress để xóa.")
             self._progress_pct = 0
             self._progress_label = "Đã xóa tiến độ."
-            return "✅ Đã xóa tiến độ, sẽ vẽ lại từ đầu."
+            return "✅ Đã xóa toàn bộ tiến độ, sẽ vẽ lại từ đầu."
         except Exception as e:
             return f"❌ Lỗi: {e}"
 
