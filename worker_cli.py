@@ -189,6 +189,7 @@ def main():
                 grid_w=grid_w,
                 grid_h=grid_h,
                 progress_path=progress_path,
+                image_sig=pp._image_signature(cfg),
             )
             log(f"Tạo plan mới: {len(sub_cells)} ô (cột {x_start}-{x_end}).")
         else:

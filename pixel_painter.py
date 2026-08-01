@@ -376,12 +376,15 @@ class PixelPlan:
             return None
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
-        # Invalidate progress nếu chữ ký ảnh+grid khác hiện tại (user đổi ảnh/grid).
+        # Invalidate progress nếu chữ ký ảnh+grid không khớp hiện tại.
+        # - saved_sig khác cur_sig: user đã đổi ảnh hoặc đổi grid → bỏ qua.
+        # - saved_sig rỗng (file legacy, tạo trước khi có cơ chế sig): cũng bỏ qua,
+        #   vì không xác định được file thuộc ảnh nào → an toàn là tạo plan mới.
         if cfg is not None:
             cur_sig = _image_signature(cfg)
             saved_sig = data.get("image_sig", "")
-            if saved_sig and saved_sig != cur_sig:
-                return None  # file cũ của ảnh khác → bỏ qua, tạo plan mới.
+            if saved_sig != cur_sig:
+                return None  # file cũ/không khớp → bỏ qua, tạo plan mới.
         cells = [Cell(x=c[0], y=c[1], rgb=tuple(c[2])) for c in data.get("cells", [])]
         # Rate-limit: chỉ giữ timestamp trong 5 phút gần nhất (cửa sổ trượt).
         now = time.time()
