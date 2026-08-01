@@ -21,7 +21,7 @@ Tự động vẽ tranh pixel art lên canvas pixel công cộng (`datn.unifolio
 
 ## 📦 Cài đặt
 
-### Cách nhanh (Windows) — chỉ 2 bước!
+**Windows — chỉ 2 bước!**
 
 1. **Bấm đúp `install.bat`** — script tự động:
    - Kiểm tra Python 3.10+
@@ -38,37 +38,17 @@ Tự động vẽ tranh pixel art lên canvas pixel công cộng (`datn.unifolio
 
 Xong! Bấm đúp shortcut Desktop hoặc chạy `run.bat` để mở tool.
 
-### Cách thủ công (Linux/Mac/Windows)
-
-```bash
-# 1. Cài dependencies
-pip install -r requirements.txt
-python -m playwright install chromium
-
-# 2. Tạo config từ template (KHÔNG commit config.yaml)
-copy config.example.yaml config.yaml      # Windows
-cp config.example.yaml config.yaml        # Linux/Mac
-
-# 3. Mở config.yaml, điền tài khoản + mật khẩu + đường dẫn ảnh
-notepad config.yaml                        # Windows
-nano config.yaml                           # Linux/Mac
-```
-
-> Yêu cầu: Python 3.10+, Chrome cài sẵn trên máy.
+> Yêu cầu: Python 3.10+ (cài tại https://www.python.org/downloads/, nhớ tick "Add Python to PATH").
 
 ---
 
 ## 🚀 Chạy
 
-```bash
-python main.py
-```
-
-Hoặc trên Windows:
 - Bấm đúp **shortcut "Auto Pixel Painter"** trên Desktop (ẩn console)
 - Hoặc bấm đúp `run.bat` (có log console để debug)
+- Hoặc lệnh: `python main.py`
 
-→ Mở cửa sổ GUI → nhập ảnh, tài khoản → bấm **▶ Vẽ tất cả** hoặc **👥 Vẽ đa tài khoản**.
+→ Mở cửa sổ Web UI → nhập ảnh, tài khoản → bấm **▶ Vẽ tất cả** hoặc **👥 Vẽ đa tài khoản**.
 
 ---
 
