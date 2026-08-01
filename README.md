@@ -15,7 +15,7 @@ Tự động vẽ tranh pixel art lên canvas pixel công cộng (`datn.unifolio
 | 👥 **Đa tài khoản song song** | Mỗi acc 1 Chrome + session + tiến độ riêng, tự chia dải cột, không đè nhau |
 | 🎯 **Smart verify** | So sánh before/after để chống false-negative do web **làm tròn màu** (quantize) |
 | ⏯ **Resume** | Lưu tiến độ từng acc, mở lại chạy tiếp từ ô chưa vẽ |
-| 🖥 **GUI Tkinter** | Giao diện đồ họa + xem preview vị trí ảnh trên canvas |
+| 🖥 **Web UI** | Giao diện Web (pywebview + Tailwind), xem preview vị trí ảnh trên canvas |
 
 ---
 
@@ -140,8 +140,7 @@ Tool không POST trực tiếp — nó **click DOM thật** (mouse down/up) đ�
 
 ```
 auto-checkin-fb/
-├── main.py                  # vào chương trình
-├── gui.py                   # giao diện Tkinter (fallback)
+├── main.py                  # vào chương trình (mở Web UI)
 ├── gui_web.py               # ⭐ giao diện Web UI (pywebview + Tailwind)
 ├── web_ui.html              # HTML/CSS cho Web UI
 ├── config.py                # đọc/ghi config.yaml

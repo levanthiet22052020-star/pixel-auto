@@ -31,7 +31,7 @@ def main():
         cfg = cfgmod.load()
         br.setup_session(cfg.session_dir)
         return
-    from gui import main as gui_main
+    from gui_web import main as gui_main
     gui_main()
 
 
