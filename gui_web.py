@@ -199,7 +199,7 @@ class Api:
             import pixel_painter as pp
             import browser as br
             palette = pp.build_palette(c)
-            plan = pp.PixelPlan.load(c.pixel_progress_path)
+            plan = pp.PixelPlan.load(c.pixel_progress_path, c)
             if plan is None:
                 plan = pp.PixelPlan.from_image(c, palette)
                 self._log(f"[DOM] Tạo plan mới: {len(plan.cells)} ô.")
@@ -370,9 +370,13 @@ class Api:
         try:
             import pixel_painter as pp
             c = self.cfg
-            # Xóa file progress.
-            if c.pixel_progress_path and os.path.exists(c.pixel_progress_path):
-                os.remove(c.pixel_progress_path)
+            # Xóa file progress — bao gồm cả default path nếu cfg để trống.
+            path = c.pixel_progress_path or pp._default_progress_path()
+            if path and os.path.exists(path):
+                os.remove(path)
+                self._log(f"🗑 Đã xóa file progress: {path}")
+            else:
+                self._log("ℹ Không có file progress để xóa.")
             self._progress_pct = 0
             self._progress_label = "Đã xóa tiến độ."
             return "✅ Đã xóa tiến độ, sẽ vẽ lại từ đầu."

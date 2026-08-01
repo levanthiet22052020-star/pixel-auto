@@ -176,7 +176,7 @@ def main():
             log("⚠️ Không có ô trong dải cột -> nhảy thẳng HELP MODE (phụ acc khác).")
 
         # Plan riêng cho acc này (resume từ file riêng).
-        plan = pp.PixelPlan.load(progress_path)
+        plan = pp.PixelPlan.load(progress_path, cfg)
         # Bỏ progress cũ nếu grid khác hiện tại (tránh resume sai lệch kích thước).
         if plan is not None and (plan.grid_w != grid_w or plan.grid_h != grid_h):
             log(f"⚠️ Progress cũ dùng grid {plan.grid_w}×{plan.grid_h} khác hiện tại "

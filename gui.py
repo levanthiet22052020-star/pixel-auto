@@ -555,7 +555,7 @@ class App:
             import pixel_painter as pp
             import browser as br
             palette = pp.build_palette(c)
-            plan = pp.PixelPlan.load(c.pixel_progress_path)
+            plan = pp.PixelPlan.load(c.pixel_progress_path, c)
             if plan is None:
                 plan = pp.PixelPlan.from_image(c, palette)
                 self._log(f"[DOM] Tạo plan mới: {len(plan.cells)} ô.")

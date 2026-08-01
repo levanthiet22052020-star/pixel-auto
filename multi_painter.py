@@ -177,7 +177,8 @@ def run_worker(
         progress_path = os.path.join(progress_dir, f"{acc.name}.json")
 
         # 2) Resume nếu có.
-        loaded = pp.PixelPlan.load(progress_path)
+        cfg = _build_cfg(mc, acc)
+        loaded = pp.PixelPlan.load(progress_path, cfg)
         if loaded is not None:
             # Khớp lại dải cột (phòng file cũ bị lệch).
             loaded.cells = pp.filter_cells_by_x(loaded.cells, acc.x_start, acc.x_end)
@@ -205,7 +206,7 @@ def run_worker(
         try:
             page = mgr.new_page()
 
-            # 4) Build Config giả để dom_painter dùng (lấy từ MultiConfig).
+            # 4) Config cho dom_painter (đã build ở trên cho load/resume).
             cfg = _build_cfg(mc, acc)
 
             # 5) Login datn + vào /pixel.

@@ -11,6 +11,7 @@ Dùng cùng session Chrome với phần check-in FB (BrowserManager).
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import random
@@ -317,6 +318,22 @@ def split_columns_for_accounts(
 # ===========================================================================
 # PixelPlan: theo dõi tiến độ, hỗ trợ resume
 # ===========================================================================
+def _image_signature(cfg: Config) -> str:
+    """Chữ ký nhận diện ảnh+grid: đường dẫn + size + mtime + kích thước grid.
+
+    Dùng để invalidate file progress khi user đổi ảnh hoặc đổi grid — tránh
+    resume nhầm cells của ảnh cũ.
+    """
+    path = cfg.pixel_image_path or ""
+    try:
+        st = os.stat(path)
+        mtime_size = f"{int(st.st_mtime)}:{st.st_size}"
+    except OSError:
+        mtime_size = "0:0"
+    sig = f"{path}|{mtime_size}|{cfg.pixel_grid_w}x{cfg.pixel_grid_h}"
+    return hashlib.md5(sig.encode("utf-8")).hexdigest()
+
+
 @dataclass
 class PixelPlan:
     cells: list[Cell]
@@ -326,6 +343,8 @@ class PixelPlan:
     progress_path: str = ""
     # Timestamp các ô đã vẽ thành công (epoch) để giữ rate-limit khi tắt/mở lại.
     rate_times: list = None
+    # Chữ ký ảnh+grid — để load() nhận diện progress cũ của ảnh khác và bỏ qua.
+    image_sig: str = ""
 
     def __post_init__(self):
         if self.rate_times is None:
@@ -348,14 +367,21 @@ class PixelPlan:
             grid_w=cfg.pixel_grid_w,
             grid_h=cfg.pixel_grid_h,
             progress_path=cfg.pixel_progress_path or _default_progress_path(),
+            image_sig=_image_signature(cfg),
         )
 
     @classmethod
-    def load(cls, path: str) -> Optional["PixelPlan"]:
+    def load(cls, path: str, cfg: Optional[Config] = None) -> Optional["PixelPlan"]:
         if not path or not os.path.exists(path):
             return None
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
+        # Invalidate progress nếu chữ ký ảnh+grid khác hiện tại (user đổi ảnh/grid).
+        if cfg is not None:
+            cur_sig = _image_signature(cfg)
+            saved_sig = data.get("image_sig", "")
+            if saved_sig and saved_sig != cur_sig:
+                return None  # file cũ của ảnh khác → bỏ qua, tạo plan mới.
         cells = [Cell(x=c[0], y=c[1], rgb=tuple(c[2])) for c in data.get("cells", [])]
         # Rate-limit: chỉ giữ timestamp trong 5 phút gần nhất (cửa sổ trượt).
         now = time.time()
@@ -368,6 +394,7 @@ class PixelPlan:
             grid_h=data.get("grid_h", 100),
             progress_path=path,
             rate_times=rate_times,
+            image_sig=data.get("image_sig", ""),
         )
 
     def save(self) -> None:
@@ -383,6 +410,7 @@ class PixelPlan:
             "cells": [[c.x, c.y, list(c.rgb)] for c in self.cells],
             "rate_times": rt,
             "saved_at": now,
+            "image_sig": self.image_sig,
         }
         tmp = self.progress_path + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
