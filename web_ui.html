@@ -154,7 +154,6 @@
     <h2 class="card-title">👥 Đa tài khoản <span class="badge badge-info">acc chính ở trên</span></h2>
     <div id="acc_rows"></div>
     <button class="btn btn-secondary btn-sm" onclick="addAccRow()">➕ Thêm tài khoản</button>
-    <p class="hint">Mỗi acc mở Chrome + session riêng, tự chia dải cột. Rate-limit riêng 600 ô/5 phút.</p>
   </div>
 
   <!-- Kích thước -->
@@ -352,7 +351,7 @@ function closePreview() { document.getElementById('preview_modal').classList.rem
 
 async function paintAll() { await api().paint_all(JSON.stringify(getFormData())); }
 async function paintMulti() {
-  if (!confirm('Vẽ đa tài khoản — sẽ mở N Chrome song song. Tiếp tục?')) return;
+  if (!confirm('Vẽ đa tài khoản — sẽ chạy song song N tài khoản. Tiếp tục?')) return;
   await api().paint_multi(JSON.stringify(getFormData()));
 }
 async function repaintDiff() { await api().repaint_diff(JSON.stringify(getFormData())); }
