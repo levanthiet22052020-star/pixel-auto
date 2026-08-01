@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auto Pixel Painter</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root {
+    --bg: #fafafa; --card: #ffffff; --border: #e5e7eb;
+    --text: #111827; --muted: #6b7280;
+    --accent: #2563eb; --accent-h: #1d4ed8;
+    --danger: #dc2626; --success: #16a34a; --warn: #d97706;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    background: var(--bg); color: var(--text);
+    margin: 0; padding: 0; font-size: 14px;
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; padding: 16px; margin-bottom: 12px;
+  }
+  .card-title {
+    font-size: 13px; font-weight: 700; color: var(--text);
+    margin: 0 0 12px 0; display: flex; align-items: center; gap: 6px;
+  }
+  label.field {
+    font-size: 12px; font-weight: 600; color: var(--muted);
+    display: block; margin-bottom: 4px;
+  }
+  input[type=text], input[type=password], input[type=number], input[type=url] {
+    width: 100%; padding: 7px 10px; font-size: 14px;
+    border: 1px solid var(--border); border-radius: 6px;
+    background: var(--card); color: var(--text); outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
+  }
+  input[type=checkbox] {
+    width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer;
+  }
+  .btn {
+    padding: 7px 14px; font-size: 13px; font-weight: 600;
+    border-radius: 6px; border: 1px solid transparent;
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-h); }
+  .btn-secondary {
+    background: var(--card); color: var(--text); border-color: var(--border);
+  }
+  .btn-secondary:hover { background: #f3f4f6; }
+  .btn-danger { background: var(--card); color: var(--danger); border-color: #fecaca; }
+  .btn-danger:hover { background: #fef2f2; }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-success:hover { background: #15803d; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
+  .check-row { display: flex; align-items: center; gap: 6px; margin: 6px 0; }
+  .check-row label { font-size: 13px; color: var(--text); cursor: pointer; }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .badge {
+    display: inline-block; padding: 2px 8px; font-size: 11px; font-weight: 600;
+    border-radius: 12px;
+  }
+  .badge-info { background: #dbeafe; color: #1e40af; }
+  .badge-success { background: #dcfce7; color: #166534; }
+  .badge-warn { background: #fef3c7; color: #92400e; }
+  #log {
+    background: #0f172a; color: #e2e8f0; font-family: "Cascadia Code", "Consolas", monospace;
+    font-size: 12px; padding: 10px; border-radius: 6px;
+    height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-word;
+  }
+  .progress {
+    height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%; background: var(--accent); transition: width 0.3s;
+    border-radius: 4px;
+  }
+  .acc-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px; margin-bottom: 6px; }
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    display: none; align-items: center; justify-content: center; z-index: 50;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: var(--card); border-radius: 10px; padding: 16px;
+    max-width: 90vw; max-height: 85vh; overflow: auto;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+  }
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--card); border-bottom: 1px solid var(--border);
+    padding: 10px 16px; display: flex; align-items: center; justify-content: space-between;
+  }
+  header h1 { font-size: 16px; font-weight: 700; margin: 0; }
+  .container { padding: 16px; max-width: 720px; margin: 0 auto; }
+  .row-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎨 Auto Pixel Painter</h1>
+  <div class="row-actions">
+    <button class="btn btn-secondary btn-sm" onclick="saveConfig()">💾 Lưu cài đặt</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Ảnh nguồn -->
+  <div class="card">
+    <h2 class="card-title">📁 Ảnh nguồn</h2>
+    <div style="display:flex; gap:6px;">
+      <input type="text" id="pixel_image_path" placeholder="Chọn ảnh cần vẽ...">
+      <button class="btn btn-secondary" onclick="pickImage()">Chọn ảnh...</button>
+      <button class="btn btn-secondary" onclick="preview()">🖼 Preview</button>
+    </div>
+  </div>
+
+  <!-- Đăng nhập -->
+  <div class="card">
+    <h2 class="card-title">🔑 Đăng nhập (DOM mode)</h2>
+    <div style="margin-bottom:10px;">
+      <label class="field">URL trang chính</label>
+      <input type="url" id="pixel_site_url" placeholder="https://datn.unifolio.io.vn">
+    </div>
+    <div class="grid-2">
+      <div>
+        <label class="field">Tài khoản</label>
+        <input type="text" id="pixel_username" placeholder="PS43933">
+      </div>
+      <div>
+        <label class="field">Mật khẩu</label>
+        <input type="password" id="pixel_password" placeholder="••••••••">
+      </div>
+    </div>
+    <div class="check-row">
+      <input type="checkbox" id="pixel_wait_login">
+      <label for="pixel_wait_login">Chờ đăng nhập thủ công (captcha/2FA)</label>
+    </div>
+
+    <hr style="border:none; border-top:1px solid var(--border); margin:12px 0;">
+    <h2 class="card-title">👥 Đa tài khoản <span class="badge badge-info">acc chính ở trên</span></h2>
+    <div id="acc_rows"></div>
+    <button class="btn btn-secondary btn-sm" onclick="addAccRow()">➕ Thêm tài khoản</button>
+    <p class="hint">Mỗi acc mở Chrome + session riêng, tự chia dải cột. Rate-limit riêng 600 ô/5 phút.</p>
+  </div>
+
+  <!-- Kích thước -->
+  <div class="card">
+    <h2 class="card-title">📏 Kích thước & vị trí <span class="badge badge-info">canvas 512×320</span></h2>
+    <div class="grid-4">
+      <div>
+        <label class="field">Rộng ảnh (ô)</label>
+        <input type="number" id="pixel_grid_w" min="2" max="512" value="512">
+      </div>
+      <div>
+        <label class="field">Cao ảnh (ô)</label>
+        <input type="number" id="pixel_grid_h" min="2" max="320" value="320">
+      </div>
+      <div>
+        <label class="field">Vẽ từ X</label>
+        <input type="number" id="pixel_offset_x" min="0" max="511" value="0">
+      </div>
+      <div>
+        <label class="field">Y</label>
+        <input type="number" id="pixel_offset_y" min="0" max="319" value="0">
+      </div>
+    </div>
+    <div id="size_info" class="hint" style="margin-top:8px; font-size:13px; color:#1e40af;"></div>
+  </div>
+
+  <!-- Tùy chọn -->
+  <div class="card">
+    <h2 class="card-title">⚙ Tùy chọn vẽ</h2>
+    <div class="grid-2">
+      <div class="check-row">
+        <input type="checkbox" id="pixel_dither">
+        <label for="pixel_dither">Dithering (chấm điểm tạo dải màu)</label>
+      </div>
+      <div class="check-row">
+        <input type="checkbox" id="pixel_full_color">
+        <label for="pixel_full_color">🎨 Toàn màu (chi tiết nhất)</label>
+      </div>
+      <div class="check-row">
+        <input type="checkbox" id="pixel_bg_skip">
+        <label for="pixel_bg_skip">Bỏ ô nền trắng/đen</label>
+      </div>
+      <div class="check-row">
+        <input type="checkbox" id="pixel_smart_skip">
+        <label for="pixel_smart_skip">Smart skip (chỉ ô sai màu)</label>
+      </div>
+    </div>
+    <div class="grid-4" style="margin-top:8px;">
+      <div>
+        <label class="field">Dung sai màu</label>
+        <input type="number" id="pixel_color_tolerance" min="0" max="128" value="10">
+      </div>
+      <div>
+        <label class="field">Độ mờ overlay</label>
+        <input type="number" id="pixel_overlay_opacity" min="0" max="1" step="0.05" value="0.35">
+      </div>
+      <div>
+        <label class="field">Cooldown (s)</label>
+        <input type="number" id="pixel_cooldown" min="0" step="0.1" value="0.5">
+      </div>
+      <div>
+        <label class="field">Vẽ từng mẻ (ô)</label>
+        <input type="number" id="pixel_batch_size" min="0" value="0">
+      </div>
+    </div>
+    <p class="hint">Smart skip = false để ép vẽ lại tất cả (đè ảnh cũ). 0 ô = vẽ hết.</p>
+  </div>
+
+  <!-- Tiến độ -->
+  <div class="card">
+    <h2 class="card-title">📊 Tiến độ</h2>
+    <div class="progress" style="margin-bottom:8px;">
+      <div class="progress-bar" id="progress_bar" style="width:0%"></div>
+    </div>
+    <div id="progress_label" class="hint" style="font-size:13px;">Chưa có tiến độ.</div>
+  </div>
+
+  <!-- Hành động -->
+  <div class="card">
+    <h2 class="card-title">▶ Hành động</h2>
+    <div class="row-actions" style="margin-bottom:8px;">
+      <button class="btn btn-secondary btn-sm" onclick="paintBatch()">▶ Vẽ thử (mẻ)</button>
+      <button class="btn btn-primary btn-sm" onclick="paintAll()">▶ Vẽ tất cả</button>
+      <button class="btn btn-success btn-sm" onclick="paintMulti()">👥 Vẽ đa tài khoản</button>
+    </div>
+    <div class="row-actions" style="margin-bottom:8px;">
+      <button class="btn btn-secondary btn-sm" onclick="testOne()">🎯 Test 1 ô</button>
+      <button class="btn btn-secondary btn-sm" onclick="repaintDiff()">🔍 Dò lại & tô</button>
+      <button class="btn btn-danger btn-sm" onclick="cancel()">⏹ Hủy (ESC)</button>
+      <button class="btn btn-secondary btn-sm" onclick="resetProgress()">🔄 Xóa tiến độ</button>
+    </div>
+    <div class="row-actions">
+      <button class="btn btn-secondary btn-sm" onclick="projectSave()">💾 Lưu dự án</button>
+      <button class="btn btn-secondary btn-sm" onclick="projectLoad()">📂 Mở dự án</button>
+    </div>
+  </div>
+
+  <!-- Nhật ký -->
+  <div class="card">
+    <h2 class="card-title">📋 Nhật ký</h2>
+    <div id="log"></div>
+  </div>
+
+</div>
+
+<!-- Preview modal -->
+<div class="modal-bg" id="preview_modal" onclick="if(event.target===this)closePreview()">
+  <div class="modal">
+    <h3 style="margin:0 0 10px; font-size:15px;">🖼 Preview</h3>
+    <img id="preview_img" style="max-width:100%; border-radius:6px;">
+    <div style="margin-top:10px; text-align:right;">
+      <button class="btn btn-secondary btn-sm" onclick="closePreview()">Đóng</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// === JS Bridge ↔ Python ===
+function api() { return window.pywebview.api; }
+
+// === Đọc/ghi form ↔ config ===
+function getFormData() {
+  const accs = [];
+  document.querySelectorAll('.acc-input-user').forEach((el, i) => {
+    const passEl = document.querySelectorAll('.acc-input-pass')[i];
+    accs.push({ user: el.value, pass: passEl.value, removable: el.dataset.removable === '1' });
+  });
+  const chk = id => document.getElementById(id).checked ? 1 : 0;
+  return {
+    pixel_image_path: val('pixel_image_path'),
+    pixel_site_url: val('pixel_site_url'),
+    pixel_username: val('pixel_username'),
+    pixel_password: val('pixel_password'),
+    pixel_wait_login: chk('pixel_wait_login'),
+    pixel_grid_w: num('pixel_grid_w'),
+    pixel_grid_h: num('pixel_grid_h'),
+    pixel_offset_x: num('pixel_offset_x'),
+    pixel_offset_y: num('pixel_offset_y'),
+    pixel_dither: chk('pixel_dither'),
+    pixel_full_color: chk('pixel_full_color'),
+    pixel_bg_skip: chk('pixel_bg_skip'),
+    pixel_smart_skip: chk('pixel_smart_skip'),
+    pixel_color_tolerance: num('pixel_color_tolerance'),
+    pixel_overlay_opacity: parseFloat(val('pixel_overlay_opacity')) || 0.35,
+    pixel_cooldown: parseFloat(val('pixel_cooldown')) || 0.5,
+    pixel_jitter: 0.2,
+    pixel_batch_size: num('pixel_batch_size'),
+    accounts: accs,
+  };
+}
+function val(id) { return document.getElementById(id).value; }
+function num(id) { return parseInt(document.getElementById(id).value) || 0; }
+
+function fillForm(c) {
+  set('pixel_image_path', c.pixel_image_path || '');
+  set('pixel_site_url', c.pixel_site_url || '');
+  set('pixel_username', c.pixel_username || '');
+  set('pixel_password', c.pixel_password || '');
+  document.getElementById('pixel_wait_login').checked = !!c.pixel_wait_login;
+  set('pixel_grid_w', c.pixel_grid_w ?? 512);
+  set('pixel_grid_h', c.pixel_grid_h ?? 320);
+  set('pixel_offset_x', c.pixel_offset_x ?? 0);
+  set('pixel_offset_y', c.pixel_offset_y ?? 0);
+  document.getElementById('pixel_dither').checked = !!c.pixel_dither;
+  document.getElementById('pixel_full_color').checked = !!c.pixel_full_color;
+  document.getElementById('pixel_bg_skip').checked = !!c.pixel_bg_skip;
+  document.getElementById('pixel_smart_skip').checked = !!c.pixel_smart_skip;
+  set('pixel_color_tolerance', c.pixel_color_tolerance ?? 10);
+  set('pixel_overlay_opacity', c.pixel_overlay_opacity ?? 0.35);
+  set('pixel_cooldown', c.pixel_cooldown_seconds ?? 0.5);
+  set('pixel_batch_size', c.pixel_batch_size ?? 0);
+  // Accounts
+  renderAccRows(c.accounts || []);
+  updateSizeInfo();
+}
+function set(id, v) { const el = document.getElementById(id); if (el) el.value = v; }
+
+// === Multi-account rows ===
+function renderAccRows(accs) {
+  const box = document.getElementById('acc_rows');
+  box.innerHTML = '';
+  if (!accs.length) accs.push({ user: '', pass: '', removable: false });
+  accs.forEach(a => addAccRow(a.user, a.pass, a.removable !== false));
+}
+function addAccRow(user = '', pass = '', removable = true) {
+  const box = document.getElementById('acc_rows');
+  const row = document.createElement('div');
+  row.className = 'acc-row';
+  row.innerHTML = `
+    <input type="text" class="acc-input-user" placeholder="Tài khoản" value="${user}" data-removable="${removable ? 1 : 0}">
+    <input type="password" class="acc-input-pass" placeholder="Mật khẩu" value="${pass}">
+    ${removable ? '<button class="btn btn-danger btn-sm" onclick="this.parentElement.remove()">✕</button>' : '<span></span>'}
+  `;
+  box.appendChild(row);
+}
+
+// === Ước tính kích thước ===
+function updateSizeInfo() {
+  const w = num('pixel_grid_w'), h = num('pixel_grid_h');
+  const ox = num('pixel_offset_x'), oy = num('pixel_offset_y');
+  const total = w * h;
+  const humanize = true; // mặc định bật
+  const secs = total * (300/600) * (humanize ? 3.0 : 1.0);
+  let t;
+  if (secs < 60) t = `${secs.toFixed(0)} giây`;
+  else if (secs < 3600) t = `${(secs/60).toFixed(1)} phút`;
+  else t = `${(secs/3600).toFixed(1)} giờ`;
+  let warn = '';
+  if (ox + w > 512 || oy + h > 320) {
+    warn = ` <span class="badge badge-warn">⚠ Vượt canvas (512×320)</span>`;
+  } else {
+    warn = ` <span class="badge badge-success">✓ trong canvas</span>`;
+  }
+  document.getElementById('size_info').innerHTML =
+    `Ảnh ${w}×${h} = <b>${total.toLocaleString()}</b> ô · ước tính <b>${t}</b>` +
+    ` (humanize ~1.5s/ô) · vẽ từ (${ox},${oy}) đến (${ox+w-1},${oy+h-1}).${warn}`;
+}
+['pixel_grid_w','pixel_grid_h','pixel_offset_x','pixel_offset_y'].forEach(id =>
+  document.getElementById(id).addEventListener('input', updateSizeInfo)
+);
+
+// === API calls ===
+async function saveConfig() {
+  const r = await api().save_config(JSON.stringify(getFormData()));
+  log(r.message || 'Đã lưu.');
+}
+async function pickImage() {
+  const p = await api().pick_image();
+  if (p) set('pixel_image_path', p);
+}
+async function preview() {
+  log('Đang tạo preview...');
+  const b64 = await api().preview(JSON.stringify(getFormData()));
+  if (b64 && b64.startsWith('data:image')) {
+    document.getElementById('preview_img').src = b64;
+    document.getElementById('preview_modal').classList.add('show');
+  } else {
+    log(b64 || 'Lỗi preview.');
+  }
+}
+function closePreview() { document.getElementById('preview_modal').classList.remove('show'); }
+
+async function paintBatch() { await api().paint_batch(JSON.stringify(getFormData())); }
+async function paintAll() { await api().paint_all(JSON.stringify(getFormData())); }
+async function paintMulti() {
+  if (!confirm('Vẽ đa tài khoản — sẽ mở N Chrome song song. Tiếp tục?')) return;
+  await api().paint_multi(JSON.stringify(getFormData()));
+}
+async function testOne() { await api().test_one(JSON.stringify(getFormData())); }
+async function repaintDiff() { await api().repaint_diff(JSON.stringify(getFormData())); }
+async function cancel() { await api().cancel(); log('⏹ Đã yêu cầu dừng.'); }
+async function resetProgress() {
+  if (!confirm('Xóa tiến độ, vẽ lại từ đầu?')) return;
+  const r = await api().reset_progress();
+  log(r);
+}
+async function projectSave() { const r = await api().project_save(JSON.stringify(getFormData())); log(r); }
+async function projectLoad() { const r = await api().project_load(); log(r); if (r.config) fillForm(r.config); }
+
+// === Polling log + progress ===
+function log(msg) {
+  const box = document.getElementById('log');
+  box.textContent += msg + '\n';
+  box.scrollTop = box.scrollHeight;
+}
+async function poll() {
+  try {
+    const msgs = await api().poll_log();
+    if (msgs && msgs.length) msgs.forEach(m => log(m));
+    const p = await api().get_progress();
+    if (p) {
+      document.getElementById('progress_bar').style.width = (p.pct || 0) + '%';
+      document.getElementById('progress_label').textContent = p.label || 'Chưa có tiến độ.';
+    }
+  } catch(e) {}
+}
+setInterval(poll, 200);
+
+// === Init: load config khi pywebview sẵn sàng ===
+function waitForApi() {
+  if (window.pywebview && window.pywebview.api) {
+    api().get_config().then(c => { if (c) fillForm(c); });
+  } else {
+    setTimeout(waitForApi, 100);
+  }
+}
+window.addEventListener('pywebviewready', waitForApi);
+waitForApi();
+</script>
+</body>
+</html>

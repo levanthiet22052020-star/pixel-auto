@@ -1,0 +1,5 @@
+playwright==1.47.0
+Pillow==10.4.0
+mss==9.0.1
+PyYAML==6.0.2
+pyinstaller==6.10.0

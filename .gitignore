@@ -1,0 +1,62 @@
+# ===================== NHẠY CẢM — KHÔNG COMMIT =====================
+# File chứa tài khoản/mật khẩu đăng nhập (BẮT BUỘC ignore)
+config.yaml
+accounts.yaml
+*.cfg.json
+.test_src_cfg.json
+
+# Cookie/phiên đăng nhập trình duyệt (chứa session token)
+session/
+session_acc*/
+.playwright-mcp/
+
+# Tiến độ vẽ + log runtime (chứa dữ liệu cá nhân)
+pixel_progress_*.json
+.multi_*.log
+.multi_acc*_cfg.json
+.multi_stop_flag
+*.log
+pixel_logic.txt
+
+# ===================== BUILD ARTIFACTS =====================
+__pycache__/
+*.pyc
+*.pyo
+build/
+dist/
+*.spec.bak
+
+# ===================== ASSETS LỚN / TẠM =====================
+# Ảnh chụp màn hình demo (lấy lại được, không cần version control)
+screenshots/
+# Source web tải về để phân tích (không phải code tool)
+datn.unifolio.io.vn/
+
+# ===================== IDE / OS =====================
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===================== PYTHON VENV =====================
+venv/
+.venv/
+env/
+ENV/
+
+# ZCode internal
+.zcode/
+
+# File runtime chứa mật khẩu (KHÔNG commit)
+**/.accounts_runtime.yaml
+**/accounts.yaml
+.pixel_*
+
+# Test script chứa credential test (chạy local)
+test_*.py
+
+# Git backup (tạm)
+.git_backup_*/

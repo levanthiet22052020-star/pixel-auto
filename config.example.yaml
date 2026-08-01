@@ -1,0 +1,84 @@
+# ============================================================
+# CONFIG TEMPLATE — copy thành config.yaml rồi điền thông tin
+# ============================================================
+# cp config.example.yaml config.yaml  (Linux/Mac)
+# copy config.example.yaml config.yaml  (Windows)
+#
+# ⚠ KHÔNG commit config.yaml (đã có trong .gitignore) — chứa mật khẩu!
+
+page_url: ''
+comment_template: '{hh}:{mm} N{d}.{m}.{yy} LVT'
+like_after_comment: true
+contact_name: ''
+send_pdf: true
+pdf_path: ''
+start_page: 1
+start_time: 08:30
+end_time: '17:30'
+fb_interval_minutes: 60
+msg_interval_minutes: 60
+msg_offset_minutes: 15
+# Để trống → tool tự dùng thư mục cạnh file .py (không cần sửa đường dẫn)
+screenshot_root: ''
+session_dir: ''
+crop_messenger_left: true
+
+# --- Pixel Painter ---
+pixel_url: https://datn.unifolio.io.vn/pixel
+pixel_site_url: https://datn.unifolio.io.vn
+pixel_username: PS43933            # ← điền tài khoản DATN của bạn
+pixel_password: 'YOUR_PASSWORD'    # ← điền mật khẩu của bạn
+pixel_wait_for_login: false
+
+# Grid canvas thật site datn (canvas 2048×1280, cell 4px)
+pixel_grid_w: 512
+pixel_grid_h: 320
+pixel_rate_limit: 600              # STUDENT: 600 ô/5 phút
+pixel_rate_window: 300
+pixel_cooldown_seconds: 0.5
+pixel_jitter_seconds: 0.2
+pixel_palette_path: ''
+pixel_dither: true
+pixel_full_color: true
+pixel_overlay_opacity: 0.35
+pixel_bg_skip: false
+pixel_smart_skip: false            # false = ép vẽ lại tất cả ô (đè ảnh cũ)
+pixel_color_tolerance: 10
+pixel_batch_size: 0
+pixel_offset_x: 192
+pixel_offset_y: 60
+pixel_image_path: ''               # ← điền đường dẫn ảnh cần vẽ
+pixel_progress_path: ''
+
+# Đa tài khoản: "user1|pass1;user2|pass2;user3|pass3"
+pixel_multi_accounts: ''
+pixel_num_accounts: 3
+pixel_canvas_origin_x: 0
+pixel_canvas_origin_y: 0
+pixel_cell_w: 0
+pixel_cell_h: 0
+pixel_use_screen_mode: false
+pixel_use_dom_mode: true
+pixel_screen_canvas_x1: 1140
+pixel_screen_canvas_y1: 587
+pixel_screen_canvas_x2: 1187
+pixel_screen_canvas_y2: 592
+pixel_screen_palette_x1: 1275
+pixel_screen_palette_y1: 666
+pixel_screen_palette_x2: 1828
+pixel_screen_palette_y2: 264
+pixel_start_delay_seconds: 1.0
+
+# === Humanize (chống flag/khóa tài khoản) ===
+pixel_humanize: true
+pixel_stroke_min: 3
+pixel_stroke_max: 12
+pixel_stroke_cell_min: 0.1
+pixel_stroke_cell_max: 0.4
+pixel_stroke_gap_min: 2.0
+pixel_stroke_gap_max: 8.0
+pixel_long_break_chance: 0.1
+pixel_long_break_min: 15.0
+pixel_long_break_max: 45.0
+
+headless: false
