@@ -51,6 +51,7 @@
   }
   .btn-primary { background: var(--accent); color: #fff; }
   .btn-primary:hover { background: var(--accent-h); }
+  .btn-block { width: 100%; justify-content: center; padding: 10px 14px; font-size: 14px; }
   .btn-secondary {
     background: var(--card); color: var(--text); border-color: var(--border);
   }
@@ -104,6 +105,7 @@
   header h1 { font-size: 16px; font-weight: 700; margin: 0; }
   .container { padding: 16px; max-width: 720px; margin: 0 auto; }
   .row-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .row-actions > .btn { flex: 1 1 0; min-width: 110px; justify-content: center; }
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -198,15 +200,18 @@
   <!-- Hành động -->
   <div class="card">
     <h2 class="card-title">▶ Hành động</h2>
+    <!-- CTA chính: full-width, nổi bật nhất -->
     <div class="row-actions" style="margin-bottom:8px;">
-      <button class="btn btn-primary btn-sm" onclick="paintAll()">▶ Vẽ tất cả</button>
+      <button class="btn btn-primary btn-block" onclick="paintAll()">▶ Vẽ tất cả</button>
+    </div>
+    <!-- Hàng 2: đa TK + hủy -->
+    <div class="row-actions" style="margin-bottom:8px;">
       <button class="btn btn-success btn-sm" onclick="paintMulti()">👥 Vẽ đa tài khoản</button>
       <button class="btn btn-danger btn-sm" onclick="cancel()">⏹ Hủy (ESC)</button>
     </div>
-    <div class="row-actions" style="margin-bottom:8px;">
-      <button class="btn btn-secondary btn-sm" onclick="repaintDiff()">🔍 Dò lại & tô</button>
-    </div>
+    <!-- Hàng 3: tiện ích -->
     <div class="row-actions">
+      <button class="btn btn-secondary btn-sm" onclick="repaintDiff()">🔍 Dò lại & tô</button>
       <button class="btn btn-secondary btn-sm" onclick="projectSave()">💾 Lưu dự án</button>
       <button class="btn btn-secondary btn-sm" onclick="projectLoad()">📂 Mở dự án</button>
     </div>
