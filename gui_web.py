@@ -34,6 +34,10 @@ class Api:
         self._progress_pct = 0.0
         self._progress_label = "Chưa có tiến độ."
         self._painting = False
+        # Tracking multi-account: tổng số ô cần vẽ + danh sách file progress.
+        self._multi_total: int = 0
+        self._multi_progress_files: list = []
+        self._multi_n_accs: int = 0
 
     # ---------- helper ----------
     def _log(self, msg: str):
@@ -253,6 +257,8 @@ class Api:
             pass
         self._painting = True
         self._progress_pct = 0
+        self._multi_total = 0  # thoát chế độ multi progress.
+        self._progress_label = "Đang vẽ..."
         self._log(f"[DOM] ▶ Bắt đầu vẽ tất cả ({c.pixel_grid_w}×{c.pixel_grid_h}).")
         threading.Thread(target=self._paint_dom_thread, args=(c, False), daemon=True).start()
 
@@ -300,7 +306,28 @@ class Api:
             pass
         self._painting = True
         self._progress_pct = 0
-        self._log(f"[Multi] 🚀 Bắt đầu vẽ đa tài khoản ({n} acc song song)...")
+        self._progress_label = f"Đang chuẩn bị ({n} tài khoản)..."
+        # Tính tổng số ô cần vẽ + danh sách file progress để poll.
+        try:
+            import pixel_painter as pp
+            palette = pp.build_palette(c)
+            cells_all = pp.image_to_pixels(
+                c.pixel_image_path, c.pixel_grid_w, c.pixel_grid_h, palette,
+                dither=c.pixel_dither, bg_skip=c.pixel_bg_skip,
+                offset_x=c.pixel_offset_x, offset_y=c.pixel_offset_y,
+            )
+            self._multi_total = len(cells_all)
+            base_dir = cfgmod.app_dir()
+            self._multi_progress_files = [
+                os.path.join(base_dir, f"pixel_progress_acc{i+1}.json")
+                for i in range(n)
+            ]
+            self._multi_n_accs = n
+        except Exception as e:
+            self._log(f"[Multi][Lỗi tính progress] {e}")
+            self._multi_total = 0
+            self._multi_progress_files = []
+        self._log(f"[Multi] 🚀 Bắt đầu vẽ đa tài khoản ({n} acc song song, {self._multi_total} ô).")
 
         def run():
             try:
@@ -364,6 +391,7 @@ class Api:
         except Exception:
             pass
         self._painting = False
+        self._multi_total = 0  # reset progress multi.
         self._log("⏹ Đã yêu cầu dừng.")
 
     def reset_progress(self) -> str:
@@ -396,6 +424,7 @@ class Api:
             else:
                 self._log("ℹ Không có file progress để xóa.")
             self._progress_pct = 0
+            self._multi_total = 0
             self._progress_label = "Đã xóa tiến độ."
             return "✅ Đã xóa toàn bộ tiến độ, sẽ vẽ lại từ đầu."
         except Exception as e:
@@ -494,6 +523,25 @@ class Api:
         return msgs
 
     def get_progress(self) -> dict:
+        # Chế độ đa tài khoản: đọc index từng file acc, cộng lại.
+        if self._multi_total > 0 and self._multi_progress_files:
+            import json
+            total_done = 0
+            for p in self._multi_progress_files:
+                try:
+                    if os.path.exists(p):
+                        with open(p, "r", encoding="utf-8") as f:
+                            d = json.load(f)
+                        total_done += int(d.get("index", 0))
+                except Exception:
+                    pass
+            pct = (total_done / self._multi_total * 100.0) if self._multi_total else 0.0
+            pct = min(pct, 100.0)
+            label = f"Đã tô {total_done}/{self._multi_total} ô ({self._multi_n_accs} acc)."
+            # Khi xong, reset tracking để không hiện progress cũ.
+            if not self._painting and pct >= 99.9:
+                pass  # giữ nguyên label "Đã tô X/Y"
+            return {"pct": pct, "label": label}
         return {"pct": self._progress_pct, "label": self._progress_label}
 
 
