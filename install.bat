@@ -14,7 +14,7 @@ echo Thu muc tool: %TOOL_DIR%
 echo.
 
 REM --- 1. Kiem tra Python ---
-echo [1/5] Kiem tra Python...
+echo [1/4] Kiem tra Python...
 python --version >nul 2>&1
 if errorlevel 1 (
     echo   [LOI] Khong tim thay Python!
@@ -30,7 +30,7 @@ echo   OK - Python %PY_VER%
 echo.
 
 REM --- 2. Cai dependencies ---
-echo [2/5] Cai thu vien tu requirements.txt...
+echo [2/4] Cai thu vien tu requirements.txt...
 cd /d "%TOOL_DIR%"
 python -m pip install --upgrade pip >nul 2>&1
 python -m pip install -r requirements.txt
@@ -43,7 +43,7 @@ echo   OK - Da cai xong thu vien
 echo.
 
 REM --- 3. Cai Playwright Chromium ---
-echo [3/5] Cai trinh duyet Chromium cho Playwright...
+echo [3/4] Cai trinh duyet Chromium cho Playwright...
 python -m playwright install chromium
 if errorlevel 1 (
     echo   [LOI] Loi cai Chromium. Kiem tra mang roi chay lai.
@@ -53,26 +53,15 @@ if errorlevel 1 (
 echo   OK - Da cai Chromium
 echo.
 
-REM --- 4. Tao config.yaml neu chua co ---
-echo [4/5] Kiem tra config.yaml...
-if not exist "%TOOL_DIR%\config.yaml" (
-    copy "%TOOL_DIR%\config.example.yaml" "%TOOL_DIR%\config.yaml" >nul
-    echo   OK - Da tao config.yaml tu template
-    echo   Canh bao: Mo config.yaml de dien mat khau DATN cua ban!
-) else (
-    echo   OK - config.yaml da ton tai (giu nguyen)
-)
-echo.
-
-REM --- 5. Tao run.bat, run.vbs, shortcut Desktop ---
-echo [5/5] Tao run.bat + run.vbs + shortcut Desktop...
+REM --- 4. Tao run.bat, run.vbs, shortcut Desktop ---
+echo [4/4] Tao run.bat + run.vbs + shortcut Desktop...
 
 REM run.bat (chay tool co log console, de debug)
 > "%TOOL_DIR%\run.bat" echo @echo off
 >> "%TOOL_DIR%\run.bat" echo chcp 65001 ^>nul
 >> "%TOOL_DIR%\run.bat" echo cd /d "%%~dp0"
 >> "%TOOL_DIR%\run.bat" echo title Auto Pixel Painter
->> "%TOOL_DIR%\run.bat" echo python main.py
+>> "%TOOL_DIR%\run.bat" echo python gui_web.py
 >> "%TOOL_DIR%\run.bat" echo echo.
 >> "%TOOL_DIR%\run.bat" echo echo Tool da thoat. Nhan phim bat ky de dong.
 >> "%TOOL_DIR%\run.bat" echo pause ^>nul
@@ -80,7 +69,7 @@ REM run.bat (chay tool co log console, de debug)
 REM run.vbs (chay tool an console, chi hien Web UI)
 > "%TOOL_DIR%\run.vbs" echo Set objShell = CreateObject("WScript.Shell")
 >> "%TOOL_DIR%\run.vbs" echo objShell.CurrentDirectory = "%TOOL_DIR%"
->> "%TOOL_DIR%\run.vbs" echo objShell.Run "pythonw main.py", 0, False
+>> "%TOOL_DIR%\run.vbs" echo objShell.Run "pythonw gui_web.py", 0, False
 
 REM Shortcut desktop tro run.vbs
 set "DESKTOP=%USERPROFILE%\Desktop"
@@ -113,8 +102,8 @@ echo   Cach chay:
 echo     - Bam dup shortcut "Auto Pixel Painter" tren Desktop
 echo     - Hoac chay: run.bat  (co log console)
 echo     - Hoac chay: run.vbs  (an console, chi hien Web UI)
-echo     - Hoac lenh:  python main.py
+echo     - Hoac lenh:  python gui_web.py
 echo.
-echo   NHOR: Mo config.yaml de dien tai khoan + mat khau DATN!
+echo   Khi mo Web UI: nhap anh + tai khoan DATN ngay trong giao diện.
 echo.
 pause
