@@ -12,6 +12,7 @@ session_acc*/
 
 # Tiến độ vẽ + log runtime (chứa dữ liệu cá nhân)
 pixel_progress_*.json
+pixel_progress_*.json.tmp
 .multi_*.log
 .multi_acc*_cfg.json
 .multi_stop_flag
