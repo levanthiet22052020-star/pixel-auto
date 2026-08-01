@@ -141,7 +141,9 @@ Tool không POST trực tiếp — nó **click DOM thật** (mouse down/up) đ�
 ```
 auto-checkin-fb/
 ├── main.py                  # vào chương trình
-├── gui.py                   # giao diện Tkinter
+├── gui.py                   # giao diện Tkinter (fallback)
+├── gui_web.py               # ⭐ giao diện Web UI (pywebview + Tailwind)
+├── web_ui.html              # HTML/CSS cho Web UI
 ├── config.py                # đọc/ghi config.yaml
 ├── config.example.yaml      # template config (KHÔNG commit config.yaml)
 ├── browser.py               # quản lý Chrome + phiên Playwright
@@ -152,9 +154,7 @@ auto-checkin-fb/
 │
 ├── worker_cli.py            # worker đa tài khoản (chạy trong subprocess)
 ├── multi_account.py         # điều phối N worker song song
-├── multi_painter.py         # multi-account cũ (CLI)
 │
-├── pixel_tool/              # tool pixel standalone
 ├── requirements.txt
 └── README.md
 ```
