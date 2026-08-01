@@ -149,10 +149,6 @@
         <input type="password" id="pixel_password" placeholder="••••••••">
       </div>
     </div>
-    <div class="check-row">
-      <input type="checkbox" id="pixel_wait_login">
-      <label for="pixel_wait_login">Chờ đăng nhập thủ công (captcha/2FA)</label>
-    </div>
 
     <hr style="border:none; border-top:1px solid var(--border); margin:12px 0;">
     <h2 class="card-title">👥 Đa tài khoản <span class="badge badge-info">acc chính ở trên</span></h2>
@@ -253,7 +249,6 @@ function getFormData() {
     pixel_site_url: val('pixel_site_url'),
     pixel_username: val('pixel_username'),
     pixel_password: val('pixel_password'),
-    pixel_wait_login: chk('pixel_wait_login'),
     pixel_grid_w: num('pixel_grid_w'),
     pixel_grid_h: num('pixel_grid_h'),
     pixel_offset_x: num('pixel_offset_x'),
@@ -272,7 +267,6 @@ function fillForm(c) {
   set('pixel_site_url', c.pixel_site_url || '');
   set('pixel_username', c.pixel_username || '');
   set('pixel_password', c.pixel_password || '');
-  document.getElementById('pixel_wait_login').checked = !!c.pixel_wait_login;
   set('pixel_grid_w', c.pixel_grid_w ?? 512);
   set('pixel_grid_h', c.pixel_grid_h ?? 320);
   set('pixel_offset_x', c.pixel_offset_x ?? 0);

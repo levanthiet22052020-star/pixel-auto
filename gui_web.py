@@ -58,7 +58,7 @@ class Api:
         c.pixel_site_url = f.get("pixel_site_url", "") or c.pixel_site_url
         c.pixel_username = f.get("pixel_username", "") or c.pixel_username
         c.pixel_password = f.get("pixel_password", "") or c.pixel_password
-        c.pixel_wait_for_login = bool(f.get("pixel_wait_login", False))
+        c.pixel_wait_for_login = False  # set cứng: luôn auto-login, không chờ thủ công.
         c.pixel_grid_w = int(f.get("pixel_grid_w", c.pixel_grid_w))
         c.pixel_grid_h = int(f.get("pixel_grid_h", c.pixel_grid_h))
         c.pixel_offset_x = int(f.get("pixel_offset_x", c.pixel_offset_x))
