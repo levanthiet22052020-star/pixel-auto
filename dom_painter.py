@@ -642,32 +642,96 @@ def _long_break(cfg: Config, log: Callable[[str], None] = print) -> bool:
 
 
 def patch_devtools_detection(page, log: Callable[[str], None] = print) -> None:
-    """Vô hiệu hóa module 87105 (DevTools detection) của web datn.
+    """Vô hiệu hóa module 87105 (DevTools detection) + Anti-focus của web datn.
 
-    Web kiểm tra mỗi 1s: nếu window.outerWidth - innerWidth > 160 (do DevTools
-    chiếm chỗ) → console cảnh báo đỏ "CẢNH BÁO". Mặc dù không khóa tài khoản,
-    nó gây nhiễu khi debug. Hàm này override outerWidth/outerHeight để chênh lệch
-    luôn nhỏ hơn ngưỡng 160px.
+    Hàm này đăng ký qua page.add_init_script (cho lần tải lại sau) và page.evaluate (cho trang hiện tại)
+    để bypass DevTools detection, fake trạng thái focus, chặn các sự kiện blur/visibilitychange,
+    và tự động ẩn hộp thoại "Hoạt động Pixel trực tiếp".
+    """
+    js_code = """
+        try {
+            // DevTools patch
+            Object.defineProperty(window, 'outerWidth', {
+                get: () => window.innerWidth,
+                configurable: true
+            });
+            Object.defineProperty(window, 'outerHeight', {
+                get: () => window.innerHeight + 80,
+                configurable: true
+            });
 
-    Lưu ý: KHÔNG cần thiết nếu không mở DevTools khi chạy tool. Nhưng bật sẵn
-    để đề phòng user mở F12 inspect.
+            // Anti-focus patch (visibilityState / hidden / hasFocus)
+            Object.defineProperty(document, 'visibilityState', {
+                get: () => 'visible',
+                configurable: true
+            });
+            Object.defineProperty(document, 'hidden', {
+                get: () => false,
+                configurable: true
+            });
+            Object.defineProperty(document, 'hasFocus', {
+                value: () => true,
+                writable: true,
+                configurable: true
+            });
+
+            // Chặn sự kiện blur/focusout/visibilitychange
+            const originalAdd = EventTarget.prototype.addEventListener;
+            EventTarget.prototype.addEventListener = function(type, listener, options) {
+                if (type === 'blur' || type === 'focusout' || type === 'visibilitychange') {
+                    return;
+                }
+                return originalAdd.apply(this, arguments);
+            };
+
+            // Chặn window/document.onblur
+            Object.defineProperty(window, 'onblur', {
+                set: () => {},
+                get: () => null,
+                configurable: true
+            });
+            Object.defineProperty(document, 'onblur', {
+                set: () => {},
+                get: () => null,
+                configurable: true
+            });
+
+            // Tự động tìm và ẩn hộp thoại "Hoạt động Pixel trực tiếp" để tránh che canvas
+            const hidePopup = () => {
+                const elements = Array.from(document.querySelectorAll('*'));
+                const header = elements.reverse().find(e => {
+                    return e.textContent && 
+                           e.textContent.trim().includes('Hoạt động Pixel trực tiếp');
+                });
+                if (header) {
+                    let container = header;
+                    let lastFloatingAncestor = null;
+                    while (container && container !== document.body) {
+                        const style = window.getComputedStyle(container);
+                        const cls = typeof container.className === 'string' ? container.className : '';
+                        if (style.position === 'absolute' || style.position === 'fixed' || 
+                            cls.includes('shadow') || cls.includes('border') || 
+                            cls.includes('absolute') || cls.includes('fixed')) {
+                            lastFloatingAncestor = container;
+                        }
+                        container = container.parentElement;
+                    }
+                    if (lastFloatingAncestor) {
+                        lastFloatingAncestor.style.setProperty('display', 'none', 'important');
+                        lastFloatingAncestor.style.setProperty('pointer-events', 'none', 'important');
+                    }
+                }
+            };
+            hidePopup();
+            setInterval(hidePopup, 500);
+        } catch(e) {}
     """
     try:
-        page.add_init_script("""
-            try {
-                Object.defineProperty(window, 'outerWidth', {
-                    get: () => window.innerWidth,
-                    configurable: true
-                });
-                Object.defineProperty(window, 'outerHeight', {
-                    get: () => window.innerHeight + 80,
-                    configurable: true
-                });
-            } catch(e) {}
-        """)
-        log("[Humanize] Đã patch DevTools detection (module 87105).")
+        page.add_init_script(js_code)
+        page.evaluate(js_code)
+        log("[Humanize] Đã kích hoạt patch DevTools & Anti-focus & Ẩn popup.")
     except Exception as e:
-        log(f"[Humanize] Patch DevTools detection lỗi ({e}) — bỏ qua.")
+        log(f"[Humanize] Kích hoạt patch lỗi ({e}) — bỏ qua.")
 
 
 def verify_cell(page, gx: int, gy: int, expected: tuple[int, int, int],
@@ -749,30 +813,38 @@ def paint_dom(
     reset_color_cache()
     # Patch DevTools detection (module 87105) — đề phòng user mở F12.
     patch_devtools_detection(page, log)
-    total = len(plan.cells)
-    limit = batch_size if batch_size > 0 else (total - plan.index)
-    drawn = 0
-    rejected = 0  # số ô bị rate-limit reject
-
     # Cache màu hiện tại của canvas để:
     #   (1) smart skip: bỏ ô đã đúng màu,
     #   (2) verify_cell: biết màu Ô TRƯỚC KHI VẼ → so before/after (chống quantize
     #       của web — set (255,0,0) nhưng web lưu (212,32,39), so màu set sẽ FAIL nhầm).
     # Cập nhật cache sau mỗi ô vẽ thành công để verify ô tiếp theo đúng.
     current_colors: dict = {}
-    # Grid thật của canvas (auto-detect, có thể ≠ GRID_W/GRID_H hardcode cũ).
     gw, gh = ci.grid_w, ci.grid_h
-    if cfg.pixel_smart_skip:
-        try:
-            current_colors = read_canvas_pixels(page, gw, gh)
-            before = total - plan.index
-            todo = plan.cells[plan.index:]
-            keep = pp.filter_changed_cells(todo, current_colors, cfg.pixel_color_tolerance)
-            plan.cells = plan.cells[: plan.index] + keep
-            log(f"[DOM] Smart skip: {before} ô -> giữ {len(keep)} ô cần đổi "
-                f"(grid canvas {gw}×{gh}).")
-        except Exception as e:
-            log(f"[DOM][Cảnh báo] smart skip lỗi ({e}), tô toàn bộ.")
+
+    # Tự động quét toàn bộ canvas để so sánh màu, sắp xếp các ô sai màu xuống sau index.
+    # Cơ chế này giúp vẽ bù các ô bị bỏ sót ở lượt chạy trước (chữa lỗi skip ô khi resume).
+    try:
+        current_colors = read_canvas_pixels(page, gw, gh)
+        correct_cells = []
+        incorrect_cells = []
+        for c in plan.cells:
+            cur = current_colors.get((c.x, c.y))
+            if cur is not None and pp._color_dist(cur, c.rgb) <= cfg.pixel_color_tolerance:
+                correct_cells.append(c)
+            else:
+                incorrect_cells.append(c)
+        
+        plan.cells = correct_cells + incorrect_cells
+        plan.index = len(correct_cells)
+        log(f"[DOM] 🔍 Quét canvas: {len(correct_cells)}/{len(plan.cells)} ô đã đúng màu. "
+            f"Còn {len(incorrect_cells)} ô cần vẽ (sẽ tự động vẽ bù các ô thiếu).")
+    except Exception as e:
+        log(f"[DOM][Cảnh báo] Không quét được canvas để tối ưu ({e}), vẽ theo tiến độ cũ.")
+
+    total = len(plan.cells)
+    limit = batch_size if batch_size > 0 else (total - plan.index)
+    drawn = 0
+    rejected = 0  # số ô bị rate-limit reject
 
     # Đảm bảo đang chọn công cụ Bút.
     try:
@@ -938,6 +1010,16 @@ def paint_dom(
             log(f"[DOM] ⏳ Bị reject [{cat}]! Ô ({c.x},{c.y}) set={c.rgb} "
                 f"before={before_rgb} after={after_rgb}. {reason}. "
                 f"Web chờ {mm}:{ss:02d} (reject {rejected}).")
+
+            # Chụp ảnh debug khi bị reject lần đầu
+            if rejected == 1:
+                try:
+                    debug_filename = f"debug_reject_{cfg.pixel_username or 'unknown'}.png"
+                    debug_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), debug_filename)
+                    page.screenshot(path=debug_path)
+                    log(f"[DOM] 📸 Đã chụp ảnh màn hình debug tại {debug_filename}")
+                except Exception as e_snap:
+                    log(f"[DOM] Không chụp được ảnh debug: {e_snap}")
 
             # Chiến lược chờ/skip theo phân loại.
             if cat == "cell_contested":

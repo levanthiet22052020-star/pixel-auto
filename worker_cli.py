@@ -29,6 +29,12 @@ import os
 import sys
 import time
 
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
+
 # Khi đóng gói exe, Playwright tính đường dẫn browser (.local-browsers) theo vị
 # trí driver bundle trong _internal/ -> không thấy browser đã cài.
 # Force dùng cache user mặc định. Phải đặt TRƯỚC khi import playwright.

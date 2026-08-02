@@ -48,7 +48,10 @@ class Api:
         """Ghi log vào queue, JS sẽ poll."""
         self.log_queue.put(str(msg))
         # Cũng in ra console để debug.
-        print(msg, flush=True)
+        try:
+            print(msg, flush=True)
+        except Exception:
+            pass
 
     def _apply_form(self, form_json: str) -> Config:
         """Nhận JSON form từ JS, áp vào cfg, trả Config sẵn sàng dùng."""

@@ -105,15 +105,15 @@ class Config:
     # escalate [30m,1h,3h,6h,12h,24h,3d,7d]. Bật humanize để vẽ theo NÉT (batch) + jitter
     # ngẫu nhiên, giống người dùng thật kéo chuột vẽ 1 vùng rồi nghỉ xem ảnh.
     pixel_humanize: bool = True              # True = bật chế độ giống người (KHUYÊN DÙNG)
-    pixel_stroke_min: int = 3                # số ô tối thiểu trong 1 nét vẽ (kéo chuột)
-    pixel_stroke_max: int = 12               # số ô tối đa trong 1 nét vẽ
-    pixel_stroke_cell_min: float = 0.10      # nghỉ tối thiểu giữa các ô trong 1 nét (giây)
-    pixel_stroke_cell_max: float = 0.40      # nghỉ tối đa giữa các ô trong 1 nét (giây)
-    pixel_stroke_gap_min: float = 2.0        # nghỉ tối thiểu GIỮA các nét (giây) — người xem ảnh/chọn màu
-    pixel_stroke_gap_max: float = 8.0        # nghỉ tối đa GIỮA các nét (giây)
-    pixel_long_break_chance: float = 0.10    # xác suất nghỉ siêu dài (giống người đi làm việc khác)
-    pixel_long_break_min: float = 15.0       # nghỉ siêu dài tối thiểu (giây)
-    pixel_long_break_max: float = 45.0       # nghỉ siêu dài tối đa (giây)
+    pixel_stroke_min: int = 6                # số ô tối thiểu trong 1 nét vẽ (kéo chuột)
+    pixel_stroke_max: int = 18               # số ô tối đa trong 1 nét vẽ
+    pixel_stroke_cell_min: float = 0.05      # nghỉ tối thiểu giữa các ô trong 1 nét (giây)
+    pixel_stroke_cell_max: float = 0.20      # nghỉ tối đa giữa các ô trong 1 nét (giây)
+    pixel_stroke_gap_min: float = 1.5        # nghỉ tối thiểu GIỮA các nét (giây) — người xem ảnh/chọn màu
+    pixel_stroke_gap_max: float = 4.0        # nghỉ tối đa GIỮA các nét (giây)
+    pixel_long_break_chance: float = 0.03    # xác suất nghỉ siêu dài (giống người đi làm việc khác)
+    pixel_long_break_min: float = 8.0        # nghỉ siêu dài tối thiểu (giây)
+    pixel_long_break_max: float = 20.0       # nghỉ siêu dài tối đa (giây)
 
     # --- Khác ---
     headless: bool = False                   # chạy ẩn hay hiện
