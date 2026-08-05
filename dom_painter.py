@@ -626,9 +626,15 @@ def paint_cell(page, ci: CanvasInfo, gx: int, gy: int, humanize: bool = True, cf
     if cfg is not None:
         speed = getattr(cfg, "pixel_speed", "medium")
         if speed == "medium":
-            delay_scale = 0.3  # giảm 70% delay mô phỏng trong ô
-        elif speed == "fast":
-            delay_scale = 0.0  # không delay
+            delay_scale = 0.3   # 3x — giảm 70% delay mô phỏng trong ô
+        elif speed == "faster":
+            delay_scale = 0.15  # 5x — giảm 85% delay trong ô
+        elif speed == "fastest":
+            delay_scale = 0.08  # 8x — giảm 92% delay trong ô (jitter mỏng)
+        elif speed == "ultra":
+            delay_scale = 0.04  # 9x — giảm 96% delay trong ô (jitter siêu mỏng)
+        elif speed in ("fast", "turbo"):
+            delay_scale = 0.0   # 10x+ — không delay
             humanize = False
 
     if humanize and delay_scale > 0:
@@ -925,7 +931,8 @@ def paint_dom(
         log(f"[Humanize] BẬT: nét {cfg.pixel_stroke_min}-{cfg.pixel_stroke_max} ô, "
             f"nghỉ giữa ô {cfg.pixel_stroke_cell_min}-{cfg.pixel_stroke_cell_max}s, "
             f"nghỉ giữa nét {cfg.pixel_stroke_gap_min}-{cfg.pixel_stroke_gap_max}s, "
-            f"xs nghỉ dài {cfg.pixel_long_break_chance*100:.0f}%.")
+            f"nghỉ dài {cfg.pixel_long_break_min}-{cfg.pixel_long_break_max}s "
+            f"(xs {cfg.pixel_long_break_chance*100:.0f}%).")
     else:
         log("[Humanize] TẮT — vẽ nhanh cũ (cảnh báo: dễ bị flag/khóa).")
 

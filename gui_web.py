@@ -110,27 +110,95 @@ class Api:
         c.pixel_overlay_opacity = 0.4   # Độ mờ overlay
         c.pixel_cooldown_seconds = 0.5  # Cooldown
         c.pixel_batch_size = 0          # Vẽ từng mẻ = 0 (vẽ hết)
-        
-        # Tốc độ vẽ: slow / medium / fast
+
+        # Tốc độ vẽ: slow / medium / fast / faster / fastest / turbo
+        # Mỗi tốc độ phải override ĐẦY ĐỦ mọi thông số timing để log/通知 luôn khớp
+        # với giá trị nghỉ thực tế (tránh config.yaml cũ ghi đè lộn xộn).
         c.pixel_speed = f.get("pixel_speed", "medium")
         if c.pixel_speed == "slow":
+            # 1x — Chậm: mô phỏng tay kỹ, nghỉ dài giống người mới vẽ.
             c.pixel_humanize = True
+            c.pixel_stroke_min = 3
+            c.pixel_stroke_max = 12
             c.pixel_stroke_cell_min = 0.05
             c.pixel_stroke_cell_max = 0.20
             c.pixel_stroke_gap_min = 1.5
             c.pixel_stroke_gap_max = 4.0
+            c.pixel_long_break_chance = 0.05     # 5% cơ hội nghỉ siêu dài
+            c.pixel_long_break_min = 15.0        # 15-45s (người xem ảnh lâu)
+            c.pixel_long_break_max = 45.0
         elif c.pixel_speed == "medium":
+            # 3x — Vừa: nhanh gấp 3 slow, vẫn giữ humanize an toàn.
             c.pixel_humanize = True
+            c.pixel_stroke_min = 6
+            c.pixel_stroke_max = 18
             c.pixel_stroke_cell_min = 0.01
             c.pixel_stroke_cell_max = 0.04
             c.pixel_stroke_gap_min = 0.3
             c.pixel_stroke_gap_max = 0.8
-        elif c.pixel_speed == "fast":
+            c.pixel_long_break_chance = 0.03     # 3% cơ hội nghỉ siêu dài
+            c.pixel_long_break_min = 5.0         # 5-15s (phù hợp nhịp nhanh)
+            c.pixel_long_break_max = 15.0
+        elif c.pixel_speed == "faster":
+            # 5x — Nhanh: giảm delay trong ô, nét dài hơn, ít nghỉ.
+            c.pixel_humanize = True
+            c.pixel_stroke_min = 8
+            c.pixel_stroke_max = 24
+            c.pixel_stroke_cell_min = 0.005
+            c.pixel_stroke_cell_max = 0.02
+            c.pixel_stroke_gap_min = 0.15
+            c.pixel_stroke_gap_max = 0.4
+            c.pixel_long_break_chance = 0.02     # 2% cơ hội nghỉ siêu dài
+            c.pixel_long_break_min = 3.0         # 3-8s
+            c.pixel_long_break_max = 8.0
+        elif c.pixel_speed == "fastest":
+            # 8x — Rất nhanh: gần như không nghỉ trong ô, còn chút jitter mỏng.
+            c.pixel_humanize = True
+            c.pixel_stroke_min = 10
+            c.pixel_stroke_max = 30
+            c.pixel_stroke_cell_min = 0.0
+            c.pixel_stroke_cell_max = 0.01
+            c.pixel_stroke_gap_min = 0.05
+            c.pixel_stroke_gap_max = 0.2
+            c.pixel_long_break_chance = 0.01     # 1% cơ hội nghỉ siêu dài
+            c.pixel_long_break_min = 2.0         # 2-5s
+            c.pixel_long_break_max = 5.0
+        elif c.pixel_speed == "ultra":
+            # 9x — Cực nhanh: jitter siêu mỏng, gần tối đa.
+            c.pixel_humanize = True
+            c.pixel_stroke_min = 12
+            c.pixel_stroke_max = 36
+            c.pixel_stroke_cell_min = 0.0
+            c.pixel_stroke_cell_max = 0.005
+            c.pixel_stroke_gap_min = 0.02
+            c.pixel_stroke_gap_max = 0.1
+            c.pixel_long_break_chance = 0.005    # 0.5% cơ hội nghỉ siêu dài
+            c.pixel_long_break_min = 1.0         # 1-3s
+            c.pixel_long_break_max = 3.0
+        elif c.pixel_speed == "turbo":
+            # 10x+ — Tối đa: tắt humanize, không nghỉ, vẽ ải tối đa.
             c.pixel_humanize = False
+            c.pixel_stroke_min = 1
+            c.pixel_stroke_max = 1
             c.pixel_stroke_cell_min = 0.0
             c.pixel_stroke_cell_max = 0.0
             c.pixel_stroke_gap_min = 0.0
             c.pixel_stroke_gap_max = 0.0
+            c.pixel_long_break_chance = 0.0      # không nghỉ siêu dài
+            c.pixel_long_break_min = 0.0
+            c.pixel_long_break_max = 0.0
+        else:
+            # fast (giữ tương thích ngược) = turbo cũ
+            c.pixel_humanize = False
+            c.pixel_stroke_min = 1
+            c.pixel_stroke_max = 1
+            c.pixel_stroke_cell_min = 0.0
+            c.pixel_stroke_cell_max = 0.0
+            c.pixel_stroke_gap_min = 0.0
+            c.pixel_stroke_gap_max = 0.0
+            c.pixel_long_break_chance = 0.0
+            c.pixel_long_break_min = 0.0
+            c.pixel_long_break_max = 0.0
 
         self.cfg = c
         return c
