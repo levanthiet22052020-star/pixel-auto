@@ -10,6 +10,12 @@ Khác gui.py (Tkinter): KHÔNG tạo tk widget, chỉ giữ data + method action
 """
 from __future__ import annotations
 
+import sys
+if "--worker" in sys.argv:
+    import worker_cli
+    worker_cli.main()
+    sys.exit(0)
+
 # Playwright: force dùng cache user mặc định (%USERPROFILE%\AppData\Local\ms-playwright)
 # thay vì .local-browsers cạnh script. Phải đặt TRƯỚC khi import playwright.
 import os
@@ -104,6 +110,28 @@ class Api:
         c.pixel_overlay_opacity = 0.4   # Độ mờ overlay
         c.pixel_cooldown_seconds = 0.5  # Cooldown
         c.pixel_batch_size = 0          # Vẽ từng mẻ = 0 (vẽ hết)
+        
+        # Tốc độ vẽ: slow / medium / fast
+        c.pixel_speed = f.get("pixel_speed", "medium")
+        if c.pixel_speed == "slow":
+            c.pixel_humanize = True
+            c.pixel_stroke_cell_min = 0.05
+            c.pixel_stroke_cell_max = 0.20
+            c.pixel_stroke_gap_min = 1.5
+            c.pixel_stroke_gap_max = 4.0
+        elif c.pixel_speed == "medium":
+            c.pixel_humanize = True
+            c.pixel_stroke_cell_min = 0.01
+            c.pixel_stroke_cell_max = 0.04
+            c.pixel_stroke_gap_min = 0.3
+            c.pixel_stroke_gap_max = 0.8
+        elif c.pixel_speed == "fast":
+            c.pixel_humanize = False
+            c.pixel_stroke_cell_min = 0.0
+            c.pixel_stroke_cell_max = 0.0
+            c.pixel_stroke_gap_min = 0.0
+            c.pixel_stroke_gap_max = 0.0
+
         self.cfg = c
         return c
 
@@ -136,6 +164,7 @@ class Api:
             "pixel_cooldown_seconds": c.pixel_cooldown_seconds,
             "pixel_batch_size": c.pixel_batch_size,
             "accounts": accs,
+            "pixel_speed": getattr(c, "pixel_speed", "medium"),
         }
 
     def save_config(self, form_json: str) -> dict:

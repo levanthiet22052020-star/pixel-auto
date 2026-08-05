@@ -114,6 +114,7 @@ class Config:
     pixel_long_break_chance: float = 0.03    # xác suất nghỉ siêu dài (giống người đi làm việc khác)
     pixel_long_break_min: float = 8.0        # nghỉ siêu dài tối thiểu (giây)
     pixel_long_break_max: float = 20.0       # nghỉ siêu dài tối đa (giây)
+    pixel_speed: str = "medium"              # tốc độ vẽ: slow (chậm) / medium (vừa) / fast (siêu tốc)
 
     # --- Khác ---
     headless: bool = False                   # chạy ẩn hay hiện
@@ -138,8 +139,10 @@ def load() -> Config:
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
     sc, ss = default_paths()
-    data.setdefault("screenshot_root", sc)
-    data.setdefault("session_dir", ss)
+    if not data.get("screenshot_root"):
+        data["screenshot_root"] = sc
+    if not data.get("session_dir"):
+        data["session_dir"] = ss
     return Config(**{k: v for k, v in data.items() if k in Config.__dataclass_fields__})
 
 

@@ -593,7 +593,7 @@ def read_palette(page) -> list[tuple[int, int, int]]:
 # ===========================================================================
 # Vẽ 1 ô + verify + đọc cooldown
 # ===========================================================================
-def paint_cell(page, ci: CanvasInfo, gx: int, gy: int, humanize: bool = True) -> None:
+def paint_cell(page, ci: CanvasInfo, gx: int, gy: int, humanize: bool = True, cfg: Optional[Config] = None) -> None:
     """Vẽ 1 ô bằng mouse.move → mouse.down → mouse.up.
 
     humanize=True: mô phỏng tay người — hover lệch nhẹ rồi trượt vào giữa ô,
@@ -601,21 +601,51 @@ def paint_cell(page, ci: CanvasInfo, gx: int, gy: int, humanize: bool = True) ->
     có thể dùng để flag/khóa tài khoản.
     """
     x, y = ci.cell_to_page(gx, gy)
-    if humanize:
+
+    # Bảo đảm canvas không bị che khuất tại toạ độ click (ví dụ: bị Toast hoặc Header che khuất)
+    try:
+        page.evaluate(
+            """([cx, cy]) => {
+                const canvas = Array.from(document.querySelectorAll('canvas')).find(c => c.width > 1000);
+                if (!canvas) return;
+                let topmost = document.elementFromPoint(cx, cy);
+                let attempts = 0;
+                while (topmost && topmost !== canvas && !topmost.contains(canvas) && topmost !== document.body && topmost !== document.documentElement && attempts < 10) {
+                    topmost.style.setProperty('pointer-events', 'none', 'important');
+                    topmost = document.elementFromPoint(cx, cy);
+                    attempts++;
+                }
+            }""",
+            [x, y],
+        )
+    except Exception:
+        pass
+
+    # Tính toán hệ số co giãn delay dựa trên cấu hình tốc độ
+    delay_scale = 1.0
+    if cfg is not None:
+        speed = getattr(cfg, "pixel_speed", "medium")
+        if speed == "medium":
+            delay_scale = 0.3  # giảm 70% delay mô phỏng trong ô
+        elif speed == "fast":
+            delay_scale = 0.0  # không delay
+            humanize = False
+
+    if humanize and delay_scale > 0:
         # Hover lệch 1-2px rồi trượt vào giữa ô (người thật không click chính
         # xác pixel bao giờ).
         jx = x + random.uniform(-1.8, 1.8)
         jy = y + random.uniform(-1.8, 1.8)
         page.mouse.move(jx, jy)
-        time.sleep(random.uniform(0.02, 0.08))
+        time.sleep(random.uniform(0.02, 0.08) * delay_scale)
         page.mouse.move(x, y)
-        time.sleep(random.uniform(0.01, 0.05))
+        time.sleep(random.uniform(0.01, 0.05) * delay_scale)
     else:
         page.mouse.move(x, y)
     page.mouse.down()
-    if humanize:
+    if humanize and delay_scale > 0:
         # Giữ phím chút (người thật không down→up tức thì).
-        time.sleep(random.uniform(0.03, 0.12))
+        time.sleep(random.uniform(0.03, 0.12) * delay_scale)
     page.mouse.up()
 
 
@@ -724,6 +754,18 @@ def patch_devtools_detection(page, log: Callable[[str], None] = print) -> None:
             };
             hidePopup();
             setInterval(hidePopup, 500);
+
+            // Chặn các thông báo toast (Không thể lưu bản vẽ) che khuất canvas bằng cách set pointer-events: none
+            const style = document.createElement('style');
+            style.textContent = `
+                [role="status"], .toast, [class*="toast"], [id*="toast"], .toast-container, [class*="toaster"] {
+                    pointer-events: none !important;
+                }
+                [role="status"] button, .toast button {
+                    pointer-events: auto !important;
+                }
+            `;
+            document.head.appendChild(style);
         } catch(e) {}
     """
     try:
@@ -845,6 +887,7 @@ def paint_dom(
     limit = batch_size if batch_size > 0 else (total - plan.index)
     drawn = 0
     rejected = 0  # số ô bị rate-limit reject
+    consecutive_failures = 0  # số ô liên tiếp bị vẽ lỗi (dùng để phát hiện rate-limit ẩn)
 
     # Đảm bảo đang chọn công cụ Bút.
     try:
@@ -907,7 +950,7 @@ def paint_dom(
 
         # Vẽ ô.
         try:
-            paint_cell(page, ci, c.x, c.y, humanize=humanize)
+            paint_cell(page, ci, c.x, c.y, humanize=humanize, cfg=cfg)
         except Exception as e:
             log(f"[DOM][Cảnh báo] vẽ ({c.x},{c.y}) lỗi: {e}")
             plan.index += 1
@@ -920,6 +963,7 @@ def paint_dom(
             plan.index += 1
             drawn += 1
             stroke_n += 1
+            consecutive_failures = 0  # reset số lần lỗi liên tiếp
             # Cập nhật cache màu: ô nay đã là màu web-làm-tròn của c.rgb.
             # Đọc lại đúng màu sau để cache chính xác (cho verify ô lân cận).
             try:
@@ -964,6 +1008,20 @@ def paint_dom(
             # Đọc thêm màu after + toast + đếm ô trong rate-window để chẩn đoán
             # chính xác nguyên nhân (rate-limit thật / ô đúng màu sẵn / tranh chấp).
             rejected += 1
+            consecutive_failures += 1
+            
+            if consecutive_failures >= 3:
+                log(f"[DOM] ⏳ Phát hiện {consecutive_failures} lần lỗi liên tiếp (không đổi màu). "
+                    "Có thể tài khoản bị rate-limit hoặc lỗi đồng bộ. Tạm dừng 60s để giãn băng thông...")
+                t0 = time.time()
+                while time.time() - t0 < 60:
+                    if _should_stop():
+                        break
+                    time.sleep(1)
+                consecutive_failures = 0
+                rejected = 0
+                continue
+
             try:
                 after_res = read_cells(page, [(c.x, c.y)], gw, gh)
                 after_rgb = after_res.get((c.x, c.y))

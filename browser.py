@@ -53,6 +53,8 @@ class BrowserManager:
         self._context: BrowserContext | None = None
 
     def start(self) -> BrowserContext:
+        if not self.session_dir:
+            self.session_dir = "session"
         os.makedirs(self.session_dir, exist_ok=True)
         self._pw = sync_playwright().start()
         # Dùng Chrome thật đã cài trên máy (channel="chrome") thay vì Chromium dev.
@@ -63,7 +65,12 @@ class BrowserManager:
             user_agent=UA,
             viewport={"width": 1366, "height": 768},
             locale="vi-VN",
-            args=["--disable-blink-features=AutomationControlled"],
+            args=[
+                "--disable-blink-features=AutomationControlled",
+                "--disable-background-timer-throttling",
+                "--disable-backgrounding-occluded-windows",
+                "--disable-renderer-backgrounding",
+            ],
         )
         # Proxy tuỳ chọn (cho multi-account dùng IP khác nhau).
         if self.proxy:

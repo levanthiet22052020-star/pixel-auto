@@ -180,6 +180,19 @@
     <div id="size_info" class="hint" style="margin-top:8px; font-size:13px; color:#1e40af;"></div>
   </div>
 
+  <!-- Tốc độ vẽ -->
+  <div class="card">
+    <h2 class="card-title">⚡ Tốc độ vẽ</h2>
+    <div style="margin-bottom:6px;">
+      <select id="pixel_speed" style="width:100%; padding:7px 10px; font-size:14px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--text); outline:none;" onchange="updateSpeedDesc()">
+        <option value="slow">Rất an toàn (Chậm - mô phỏng người thật kỹ)</option>
+        <option value="medium" selected>Tối ưu (Vừa - nhanh gấp 3 lần, khuyên dùng)</option>
+        <option value="fast">Siêu tốc (Nhanh nhất - tắt mô phỏng, dễ bị quét khóa tài khoản)</option>
+      </select>
+    </div>
+    <div id="speed_desc" class="hint" style="font-size:13px; color:#d97706; font-weight: 500;"></div>
+  </div>
+
   <!-- Tiến độ -->
   <div class="card">
     <h2 class="card-title">📊 Tiến độ</h2>
@@ -252,6 +265,7 @@ function getFormData() {
     pixel_grid_h: num('pixel_grid_h'),
     pixel_offset_x: num('pixel_offset_x'),
     pixel_offset_y: num('pixel_offset_y'),
+    pixel_speed: val('pixel_speed'),
     // Các tùy chọn vẽ (dither, full_color, smart_skip, color_tolerance,
     // overlay_opacity, cooldown, batch_size) đã được set cứng trong Python.
     pixel_jitter: 0.2,
@@ -260,6 +274,22 @@ function getFormData() {
 }
 function val(id) { return document.getElementById(id).value; }
 function num(id) { return parseInt(document.getElementById(id).value) || 0; }
+
+function updateSpeedDesc() {
+  const v = val('pixel_speed');
+  const desc = document.getElementById('speed_desc');
+  if (!desc) return;
+  if (v === 'slow') {
+    desc.innerHTML = '🛡️ Chậm: Nghỉ 0.05s-0.2s mỗi ô, 1.5s-4s mỗi nét. Mô phỏng giống người thật kỹ lưỡng.';
+    desc.style.color = '#16a34a';
+  } else if (v === 'medium') {
+    desc.innerHTML = '⚡ Vừa: Nghỉ 0.01s-0.04s mỗi ô, 0.3s-0.8s mỗi nét. Vẽ nhanh gấp 3 lần mà vẫn giữ an toàn.';
+    desc.style.color = '#2563eb';
+  } else if (v === 'fast') {
+    desc.innerHTML = '⚠️ Siêu tốc: Tắt hoàn toàn thời gian chờ. Vẽ nhanh tối đa, dễ có nguy cơ bị server khóa tài khoản.';
+    desc.style.color = '#dc2626';
+  }
+}
 
 function fillForm(c) {
   set('pixel_image_path', c.pixel_image_path || '');
@@ -270,9 +300,11 @@ function fillForm(c) {
   set('pixel_grid_h', c.pixel_grid_h ?? 320);
   set('pixel_offset_x', c.pixel_offset_x ?? 0);
   set('pixel_offset_y', c.pixel_offset_y ?? 0);
+  set('pixel_speed', c.pixel_speed ?? 'medium');
   // Accounts
   renderAccRows(c.accounts || []);
   updateSizeInfo();
+  updateSpeedDesc();
 }
 function set(id, v) { const el = document.getElementById(id); if (el) el.value = v; }
 

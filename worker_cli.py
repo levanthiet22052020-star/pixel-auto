@@ -78,7 +78,17 @@ def main():
         sys.stderr.write("Usage: python worker_cli.py <config_file.json>\n")
         sys.exit(2)
 
-    config_file = sys.argv[1]
+    # Nhận diện đường dẫn file config tùy theo chế độ chạy (dev / đóng gói exe)
+    if "--worker" in sys.argv:
+        try:
+            idx = sys.argv.index("--worker")
+            config_file = sys.argv[idx + 1]
+        except (ValueError, IndexError):
+            sys.stderr.write("Error: config file missing after --worker\n")
+            sys.exit(2)
+    else:
+        config_file = sys.argv[1]
+
     with open(config_file, "r", encoding="utf-8") as f:
         data = json.load(f)
 
