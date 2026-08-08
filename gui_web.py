@@ -267,7 +267,12 @@ class Api:
             return ""
 
     def remove_bg(self, form_json: str) -> str:
-        """Xóa phông nền ảnh bằng rembg (AI), lưu ra file _nobg.png bên cạnh gốc.
+        """Xóa phông nền ảnh bằng rembg (AI) + hậu xử lý làm sạch viền.
+
+        Các bước:
+        1. rembg remove() với alpha_matting để tinh chỉnh biên.
+        2. Ngưỡng alpha cứng (cắt bỏ pixel bán trong suốt ở viền).
+        3. Erode mask 1px để loại bỏ viền nền còn dính.
 
         Trả về đường dẫn file mới (đã xóa phông) để JS set vào ô ảnh nguồn.
         """
@@ -278,29 +283,54 @@ class Api:
             return ""
         try:
             from rembg import remove
-            from PIL import Image
+            from PIL import Image, ImageFilter
             import io as _io
-            self._log("🪄 Đang xóa phông nền bằng AI (lần đầu sẽ tải model ~170MB)...")
+            import numpy as _np
+            self._log("🪄 Đang xóa phông nền AI + làm sạch viền...")
             with open(src, "rb") as f:
                 data = f.read()
-            out = remove(data)
+            # alpha_matting=True bật chế độ tinh chỉnh viền (matting).
+            out = remove(
+                data,
+                alpha_matting=True,
+                alpha_matting_foreground_threshold=240,
+                alpha_matting_background_threshold=15,
+                alpha_matting_erode_size=4,
+            )
             img = Image.open(_io.BytesIO(out)).convert("RGBA")
-            # Đặt tên file output: <tên gốc>_nobg.png (cùng thư mục gốc).
+            # === Hậu xử lý: làm sạch viền còn dính nền ===
+            r, g, b, a = img.split()
+            # 1) Ngưỡng cứng: pixel bán trong suốt (10 < alpha < 250) -> ép về 0
+            #    để loại bỏ viền mờ (fringe) do rembg không cắt sạch.
+            a_arr = _np.array(a)
+            a_clean = _np.where(a_arr < 250, 0, 255).astype("uint8")
+            a_img = Image.fromarray(a_clean, mode="L")
+            # 2) Erode mask 1px: thu nhỏ vùng giữ lại để loại bỏ viền nền dính.
+            #    Dùng MinFilter (erode) với kernel 3.
+            a_img = a_img.filter(ImageFilter.MinFilter(3))
+            # Ghép lại.
+            img_clean = Image.merge("RGBA", (r, g, b, a_img))
+            # Đặt tên file output.
             base, _ = os.path.splitext(src)
             dst = base + "_nobg.png"
-            img.save(dst, "PNG")
-            # Cập nhật luôn đường dẫn ảnh nguồn trong cfg.
+            img_clean.save(dst, "PNG")
+            # Cập nhật đường dẫn ảnh nguồn.
             c.pixel_image_path = dst
             self.cfg.pixel_image_path = dst
-            self._log(f"✅ Đã xóa phông: {dst}")
+            # Đếm pixel giữ lại để báo cáo.
+            kept = int((a_img.getextrema()[1] > 0) and
+                       (_np.array(a_img) > 0).sum())
+            total = a_img.width * a_img.height
+            pct = (kept / total * 100) if total else 0
+            self._log(f"✅ Đã xóa phông: {dst} (giữ {pct:.0f}% pixel)")
             return dst
         except ImportError:
-            msg = "❌ Chưa cài rembg. Chạy: pip install rembg"
-            self._log(msg)
+            self._log("❌ Chưa cài rembg. Chạy: pip install rembg")
             return ""
         except Exception as e:
             self._log(f"[remove_bg][Lỗi] {e}")
             return ""
+
 
 
     def preview(self, form_json: str) -> str:
