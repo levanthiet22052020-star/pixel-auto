@@ -141,9 +141,20 @@ def image_to_pixels(
 
     Trả về danh sách Cell cần vẽ (theo thứ tự quét trên-dưới, trái-phải).
     offset_x/y: cộng thêm vào tọa độ ô để đặt ảnh ở vị trí khác (0,0) trên canvas.
+
+    Hỗ trợ ảnh PNG trong suốt (đã xóa background): pixel có alpha < 128 sẽ
+    bị bỏ qua (không vẽ), để chỉ tô phần thật của ảnh lên canvas.
     """
-    img = Image.open(img_path).convert("RGB")
-    img = img.resize((grid_w, grid_h), Image.LANCZOS)
+    raw = Image.open(img_path)
+    # Giữ kênh alpha riêng để nhận diện vùng trong suốt (đã xóa background).
+    has_alpha = "A" in raw.getbands() or raw.mode == "RGBA" or raw.mode == "LA"
+    if has_alpha:
+        rgba = raw.convert("RGBA").resize((grid_w, grid_h), Image.LANCZOS)
+        alpha = rgba.split()[-1]  # kênh alpha đã resize.
+        src = rgba.convert("RGB")
+    else:
+        src = raw.convert("RGB").resize((grid_w, grid_h), Image.LANCZOS)
+        alpha = None
 
     if dither and palette:
         # Floyd-Steinberg dither giới hạn bởi palette.
@@ -152,15 +163,18 @@ def image_to_pixels(
         for c in palette[:256]:
             flat.extend(c)
         pal_img.putpalette(flat)
-        quant = img.quantize(colors=min(len(palette), 256), palette=pal_img).convert("RGB")
+        quant = src.quantize(colors=min(len(palette), 256), palette=pal_img).convert("RGB")
         src = quant
-    else:
-        src = img
+    # Lưu ý: alpha được trích từ ảnh gốc TRƯỚC khi quantize để không bị mất.
 
     px = src.load()
+    ax = alpha.load() if alpha is not None else None
     cells: list[Cell] = []
     for y in range(grid_h):
         for x in range(grid_w):
+            # Bỏ pixel trong suốt (ảnh đã xóa background) — không tô lên canvas.
+            if ax is not None and ax[x, y] < 128:
+                continue
             rgb = px[x, y]
             if isinstance(rgb, int):
                 rgb = (rgb, rgb, rgb)

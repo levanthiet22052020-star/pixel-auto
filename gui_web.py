@@ -281,8 +281,14 @@ class Api:
                 dither=c.pixel_dither, bg_skip=c.pixel_bg_skip,
             )
             gw, gh = c.pixel_grid_w, c.pixel_grid_h
-            # Vẽ thumbnail ảnh pixel.
-            pix_img = Image.new("RGB", (gw, gh), (255, 255, 255))
+            # Vẽ thumbnail ảnh pixel — nền checkerboard để hiện vùng trong suốt
+            # (ô "bỏ qua" do alpha thấp sẽ thấy nền caro, giống Photoshop).
+            pix_img = Image.new("RGB", (gw, gh), (200, 200, 200))
+            pxi = pix_img.load()
+            for yy in range(gh):
+                for xx in range(gw):
+                    if ((xx // 4) + (yy // 4)) % 2 == 0:
+                        pxi[xx, yy] = (240, 240, 240)
             for ce in cells:
                 pix_img.putpixel((ce.x, ce.y), tuple(ce.rgb))
             pix_img = pix_img.resize((gw * 4, gh * 4), Image.NEAREST)
