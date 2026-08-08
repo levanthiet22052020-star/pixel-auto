@@ -125,10 +125,11 @@
   <!-- Ảnh nguồn -->
   <div class="card">
     <h2 class="card-title">📁 Ảnh nguồn</h2>
-    <div style="display:flex; gap:6px;">
+    <div style="display:flex; gap:6px; flex-wrap:wrap;">
       <input type="text" id="pixel_image_path" placeholder="Chọn ảnh cần vẽ...">
       <button class="btn btn-secondary" onclick="pickImage()">Chọn ảnh...</button>
       <button class="btn btn-secondary" onclick="removeBg()">🪄 Xóa phông</button>
+      <button class="btn btn-secondary" onclick="keepDark()">🖤 Giữ viền đen</button>
       <button class="btn btn-secondary" onclick="preview()">🖼 Preview</button>
     </div>
   </div>
@@ -397,6 +398,23 @@ async function removeBg() {
     }
   } catch (e) {
     log('❌ Lỗi xóa phông: ' + e);
+  }
+}
+async function keepDark() {
+  const path = val('pixel_image_path');
+  if (!path) { log('⚠ Chọn ảnh trước.'); return; }
+  log('🖤 Đang tách viền đen (bỏ nền trắng)...');
+  try {
+    const data = getFormData();
+    data.pixel_image_path = path;
+    const r = await api().keep_dark(JSON.stringify(data));
+    if (r) {
+      set('pixel_image_path', r);
+      log('✅ Đã tách viền: ' + r);
+      updateSizeInfo();
+    }
+  } catch (e) {
+    log('❌ Lỗi tách viền: ' + e);
   }
 }
 async function preview() {

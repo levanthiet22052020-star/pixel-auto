@@ -331,7 +331,54 @@ class Api:
             self._log(f"[remove_bg][Lỗi] {e}")
             return ""
 
+    def keep_dark(self, form_json: str) -> str:
+        """Giữ phần tối (viền đen/logo), bỏ phần sáng (nền trắng).
 
+        Dành cho ảnh logo đen-trắng hoặc line art: chỉ giữ pixel tối (gần đen)
+        và bỏ pixel sáng (gần trắng). Output là PNG trong suốt với phần tối
+        giữ nguyên màu, phần sáng bị xóa (alpha=0).
+
+        Trả về đường dẫn file mới để JS set vào ô ảnh nguồn.
+        """
+        c = self._apply_form(form_json)
+        src = c.pixel_image_path
+        if not src or not os.path.exists(src):
+            self._log("⚠ Chọn ảnh nguồn trước.")
+            return ""
+        try:
+            from PIL import Image
+            import numpy as _np
+            self._log("🖤 Đang tách viền đen (bỏ nền trắng)...")
+            img = Image.open(src).convert("RGB")
+            arr = _np.array(img)
+            # Tính độ sáng mỗi pixel (0=đen, 255=trắng).
+            # Dùng perceptual luminance cho chính xác hơn trung bình đơn giản.
+            r, g, b = arr[:, :, 0].astype(float), arr[:, :, 1].astype(float), arr[:, :, 2].astype(float)
+            lum = (0.299 * r + 0.587 * g + 0.114 * b).astype("uint8")
+            # Ngưỡng: pixel có độ sáng < threshold_dark -> giữ; >= -> bỏ.
+            # Mặc định 128 (giữa đen-trắng). Anti-alias: 0-128 alpha tuyến tính.
+            threshold_dark = 128
+            alpha = _np.where(lum < threshold_dark, 255, 0).astype("uint8")
+            # Anti-alias nhẹ ở viền: pixel lum trong 96-160 -> alpha tỉ lệ.
+            aa_low, aa_high = 96, 160
+            mask_aa = (lum >= aa_low) & (lum <= aa_high)
+            alpha[mask_aa] = ((aa_high - lum[mask_aa]) * 255 // (aa_high - aa_low)).astype("uint8")
+            # Tạo RGBA.
+            rgba = _np.dstack([arr, alpha])
+            out = Image.fromarray(rgba, mode="RGBA")
+            base, _ = os.path.splitext(src)
+            dst = base + "_dark.png"
+            out.save(dst, "PNG")
+            c.pixel_image_path = dst
+            self.cfg.pixel_image_path = dst
+            kept = int((alpha > 0).sum())
+            total = alpha.size
+            pct = (kept / total * 100) if total else 0
+            self._log(f"✅ Đã tách viền: {dst} (giữ {pct:.0f}% pixel)")
+            return dst
+        except Exception as e:
+            self._log(f"[keep_dark][Lỗi] {e}")
+            return ""
 
     def preview(self, form_json: str) -> str:
         """Tạo preview PNG (ảnh pixel + vị trí canvas) → base64."""
