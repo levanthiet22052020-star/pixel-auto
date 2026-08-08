@@ -46,6 +46,10 @@ datn.unifolio.io.vn/
 Thumbs.db
 desktop.ini
 
+# Debug screenshots runtime (chứa thông tin tài khoản trong tên file)
+debug_*.png
+debug_*.jpg
+
 # ===================== PYTHON VENV =====================
 venv/
 .venv/
