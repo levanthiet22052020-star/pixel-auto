@@ -5,3 +5,4 @@ mss==9.0.1
 APScheduler==3.10.4
 PyYAML==6.0.2
 pywebview==6.2.1
+rembg==2.0.76

@@ -266,6 +266,43 @@ class Api:
             self._log(f"[pick_image][Lỗi] {e}")
             return ""
 
+    def remove_bg(self, form_json: str) -> str:
+        """Xóa phông nền ảnh bằng rembg (AI), lưu ra file _nobg.png bên cạnh gốc.
+
+        Trả về đường dẫn file mới (đã xóa phông) để JS set vào ô ảnh nguồn.
+        """
+        c = self._apply_form(form_json)
+        src = c.pixel_image_path
+        if not src or not os.path.exists(src):
+            self._log("⚠ Chọn ảnh nguồn trước khi xóa phông.")
+            return ""
+        try:
+            from rembg import remove
+            from PIL import Image
+            import io as _io
+            self._log("🪄 Đang xóa phông nền bằng AI (lần đầu sẽ tải model ~170MB)...")
+            with open(src, "rb") as f:
+                data = f.read()
+            out = remove(data)
+            img = Image.open(_io.BytesIO(out)).convert("RGBA")
+            # Đặt tên file output: <tên gốc>_nobg.png (cùng thư mục gốc).
+            base, _ = os.path.splitext(src)
+            dst = base + "_nobg.png"
+            img.save(dst, "PNG")
+            # Cập nhật luôn đường dẫn ảnh nguồn trong cfg.
+            c.pixel_image_path = dst
+            self.cfg.pixel_image_path = dst
+            self._log(f"✅ Đã xóa phông: {dst}")
+            return dst
+        except ImportError:
+            msg = "❌ Chưa cài rembg. Chạy: pip install rembg"
+            self._log(msg)
+            return ""
+        except Exception as e:
+            self._log(f"[remove_bg][Lỗi] {e}")
+            return ""
+
+
     def preview(self, form_json: str) -> str:
         """Tạo preview PNG (ảnh pixel + vị trí canvas) → base64."""
         c = self._apply_form(form_json)

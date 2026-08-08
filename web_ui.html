@@ -128,6 +128,7 @@
     <div style="display:flex; gap:6px;">
       <input type="text" id="pixel_image_path" placeholder="Chọn ảnh cần vẽ...">
       <button class="btn btn-secondary" onclick="pickImage()">Chọn ảnh...</button>
+      <button class="btn btn-secondary" onclick="removeBg()">🪄 Xóa phông</button>
       <button class="btn btn-secondary" onclick="preview()">🖼 Preview</button>
     </div>
   </div>
@@ -379,6 +380,23 @@ async function pickImage() {
     }
   } catch (e) {
     log('❌ Lỗi chọn ảnh: ' + e);
+  }
+}
+async function removeBg() {
+  const path = val('pixel_image_path');
+  if (!path) { log('⚠ Chọn ảnh trước khi xóa phông.'); return; }
+  log('🪄 Đang xóa phông nền (AI, lần đầu tải model ~170MB)...');
+  try {
+    const data = getFormData();
+    data.pixel_image_path = path;
+    const r = await api().remove_bg(JSON.stringify(data));
+    if (r) {
+      set('pixel_image_path', r);
+      log('✅ Đã xóa phông: ' + r);
+      updateSizeInfo();
+    }
+  } catch (e) {
+    log('❌ Lỗi xóa phông: ' + e);
   }
 }
 async function preview() {
